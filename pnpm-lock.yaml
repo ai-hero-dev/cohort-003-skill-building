@@ -14,6 +14,9 @@ importers:
       ai-hero-cli:
         specifier: ^0.2.15
         version: 0.2.15
+      husky:
+        specifier: ^9.1.7
+        version: 9.1.7
       prettier:
         specifier: ^3.8.1
         version: 3.8.1
@@ -28,6 +31,11 @@ packages:
 
   ai-hero-cli@0.2.15:
     resolution: {integrity: sha512-OEulbxQRZkXbQzEdkBnV6u0H47pqmLQPNkrQ/t5PfdVCWy4Wf3C5Db5FTQIGFsrr5ZGunCQqI6kwo0rXSdsCww==}
+    hasBin: true
+
+  husky@9.1.7:
+    resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
+    engines: {node: '>=18'}
     hasBin: true
 
   prettier@3.8.1:
@@ -50,6 +58,8 @@ snapshots:
       undici-types: 7.16.0
 
   ai-hero-cli@0.2.15: {}
+
+  husky@9.1.7: {}
 
   prettier@3.8.1: {}
 
