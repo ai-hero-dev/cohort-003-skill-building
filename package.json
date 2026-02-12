@@ -1,0 +1,24 @@
+{
+  "name": "cohort-003-skill-building",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "cherry-pick": "ai-hero-cli cherry-pick --branch=live-run-through",
+    "reset": "ai-hero-cli reset --branch=live-run-through",
+    "pull": "ai-hero-cli pull",
+    "dev": "echo 'Not implemented yet'"
+  },
+  "prettier": {
+    "semi": true,
+    "trailingComma": "es5",
+    "singleQuote": false,
+    "printWidth": 80,
+    "tabWidth": 2
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "ai-hero-cli": "^0.2.15",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3"
+  }
+}
