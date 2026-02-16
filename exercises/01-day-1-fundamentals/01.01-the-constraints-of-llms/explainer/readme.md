@@ -1,84 +1,35 @@
-# The Constraints Of LLMs
+# The Constraints of LLMs
 
-To work effectively with LLMs, you need to understand their fundamental constraints. These aren't bugs to be fixed — they're inherent properties of how the technology works.
+Large language models aren't junior developers. They're something fundamentally weirder and more constrained than that.
 
-## Attention Relationship Scaling
+Understanding these constraints is critical. Without this knowledge, you'll blame the model, the provider, or Claude Code itself when things go wrong. In reality, you're probably working against the model's nature instead of with it.
 
-There is a finite amount of attention that LLMs have access to. Each token has a relationship to every other token, meaning the number of attention relationships scales quadratically — n² for n tokens.
+The constraints of LLMs force you to improve your codebase quality, structure your context carefully, and design feedback loops into your workflow. Get these wrong, and you'll end up with garbage output. Get them right, and Claude Code becomes a genuinely powerful coding partner.
 
-| Tokens (n) | Attention Relationships (n²) |
-| ---------- | ---------------------------- |
-| 1,000      | 1,000,000                    |
-| 10,000     | 100,000,000                  |
-| 100,000    | 10,000,000,000               |
-| 1,000,000  | 1,000,000,000,000            |
+## Steps To Complete
 
-Each attention relationship is stored as a score in a KV cache. But this is only for a _single_ attention head. Production models run many attention mechanisms simultaneously — a model might have 80 layers, each with 64 heads. At 100,000 tokens, each head needs 10 billion scores, all of which must be computed, stored, and referenced to produce the next token.
+- [ ] Watch the video and understand the smart zone vs. dumb zone problem
 
-This is the core reason that **more tokens = worse performance**. The attention budget gets spread thinner across more relationships, making it harder for the model to focus on what matters.
+The smart zone is where the model has enough attention budget to work sharply. The dumb zone is where attention relationships become strained and reasoning degrades. With a 200,000 token limit, the smart zone typically extends to around 80,000 tokens. Beyond 80-90% of your context window, you're in serious trouble.
 
-Some research into sparse attention (sliding windows, dilated/strided patterns, learned sparsity) aims to reduce this cost, but most production models don't document their attention mechanisms.
+Think of it like a football league where every new team has to play every other team. Adding tokens scales quadratically, not linearly.
 
-## Smart Zone / Dumb Zone
+- [ ] Learn why hallucinations happen and what they actually are
 
-The attention scaling problem has a practical consequence: the further you go into the context window, the dumber the LLM gets.
+Hallucinations aren't bugs. They're what happens when you ask an LLM about information outside its fuzzy, compressed knowledge. The model wants to help so badly that it fills gaps with plausible-sounding nonsense. Write down three examples of hallucinations you've seen or could imagine seeing in Claude Code (inventing methods, getting API structure wrong, etc.).
 
-Dex Horthy describes this as the "dumb zone" — roughly the last 40% of the context window. Before that is the "smart zone."
+- [ ] Understand why you can't use LLMs as databases
 
-This is also related to the "Lost in the Middle" problem ([paper](https://arxiv.org/pdf/2307.03172)): LLMs are worse at utilizing information placed in the middle of their context. Information at the beginning and end gets more attention. This may be influenced by training data patterns — many texts (news articles, etc.) place the most important information at the start and end.
+LLMs have read all of the internet's public knowledge but compressed it down to a blurry JPEG. They can't reliably recall information from their training data. The only information they see sharply is what's currently in the context window. Write down why this means you need to include documentation and code examples in your prompts instead of relying on the model's memory.
 
-The practical takeaway: **keep your context lean and front-loaded**. Think of the context window like a UI — if you overload it with too much information, the model gets confused, just like a user faced with too many buttons on a page.
+- [ ] Explore the statelessness constraint and what it means for your codebase
 
-## Hallucinations
+Every new conversation is a blank slate. Claude Code is like a new developer joining your team every 20 minutes with zero institutional knowledge. This means your codebase quality directly determines how effective Claude Code will be. Ask yourself: is your repository friendly to new starters? Can someone get oriented quickly? Are related pieces grouped together?
 
-LLMs are lossy semantic compressors. Like JPEG compresses images and MP3 compresses audio, LLMs compress _meaning_. And like all lossy compression, they produce artifacts when pushed too hard.
+- [ ] Learn about knowledge cutoff dates and their impact
 
-Every lossy compressor can only reconstruct patterns present in its training data. JPEG can't reconstruct detail that was thrown away. LLMs can't reconstruct logic they never learned.
+The model was trained on data up to a specific date. Anything newer than that is invisible to its parametric knowledge. If your library shipped a major version after the training cutoff, the model won't know about it. This reinforces why you can't rely on the model's internal knowledge - you have to provide the information in the context window.
 
-### Taxonomy
+- [ ] Reflect on how these constraints connect
 
-Hallucinations fall into two categories:
-
-**Factuality Hallucinations** — the model produces factually incorrect information:
-
-- **Factual Contradiction**: States wrong facts (e.g., entity errors, relationship errors)
-- **Factual Fabrication**: Invents nonexistent facts (e.g., unverifiable claims, overclaims)
-
-**Faithfulness Hallucinations** — the model deviates from given instructions/context:
-
-- **Instruction Inconsistency**: Ignores user instructions (e.g., answers a question instead of translating it)
-- **Context Inconsistency**: Contradicts provided context (e.g., summarizes a document incorrectly despite having the correct text)
-- **Logical Inconsistency**: Internal logic breaks down mid-reasoning (e.g., correct first step, then contradictory second step)
-
-Logical and contextual inconsistencies _increase as context grows_, because the attention relationships become more diffuse.
-
-### Practical Implication
-
-When working with coding agents, if the LLM invents methods on a library that don't exist, consider whether relevant examples are in its context. With newer libraries, factual fabrication is much more likely if you don't include relevant information. Pointing the model to previous implementations tamps down factuality-based hallucinations.
-
-## Statelessness
-
-LLMs have no persistent memory between conversations. Each invocation starts with a blank slate — the only information available is what's in the current context window.
-
-As described in Legacy Codebases And AI: "It forgets everything that it learned during its last run. It's essentially stateless." Human developers working on a codebase are _stateful_ — they accumulate tribal knowledge over time. LLMs cannot.
-
-This means:
-
-- Every conversation must re-establish context from scratch
-- The model has no tribal knowledge about your codebase
-- You need to explicitly provide relevant context each time (via system prompts, RAG, CLAUDE.md files, etc.)
-- Tools like persistent TODO lists and structured notes help agents retain context across turns within a single conversation — but across conversations, it's gone
-
-## Knowledge Cutoff Dates
-
-LLM training data has a cutoff date. Anything that happened after that date is invisible to the model's parametric knowledge (the compressed knowledge baked into its weights).
-
-Retrieved context (via RAG, tool use, etc.) is viewable in its complete, uncompressed form. But training data the model relies on is compressed into an incredibly small package — lossy compression of the entire internet into a set of model weights.
-
-This distinction matters:
-
-- For well-known, stable knowledge: the model's parametric knowledge is usually reliable
-- For recent events, new libraries, or evolving APIs: you _must_ provide context via retrieval
-- Older models could over-rely on parametric knowledge even when context contradicts it, though post-training techniques have improved this
-
-The practical takeaway: **don't trust the model's built-in knowledge for anything time-sensitive**. Always provide up-to-date context for recent information.
+Write down how attention scaling, hallucinations, statelessness, and knowledge cutoff are all interconnected. How does managing one constraint help you manage the others? What would your workflow look like if you had to account for all four?
