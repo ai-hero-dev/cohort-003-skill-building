@@ -1,3 +1,3 @@
-# Preparing A Backlog For Ralph
+# Using The Backlog To Parallelize QA
 
-Take the code from the previous exercise and QA it thoroughly. Prepare backlog items for Ralph to work on next.
+Take the code from the previous exercise and QA it, add backlog items, run Ralph at the same time.
