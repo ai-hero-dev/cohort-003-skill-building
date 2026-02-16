@@ -1,9 +1,11 @@
 # Scoping Document: The Plan-Execute-Clear Loop
 
 ## Scope
+
 Learn how to use Claude Code's plan-execute-clear workflow to build a comment system feature by cycling through planning, execution, and context management phases.
 
 ## Prerequisites
+
 - Understanding of what plan mode is and how to activate it (Shift+Tab twice)
 - Knowledge of how context usage appears in Claude Code's status line
 - Familiarity with Claude Code's basic interface and navigation
@@ -11,6 +13,7 @@ Learn how to use Claude Code's plan-execute-clear workflow to build a comment sy
 - Completion of lesson 01.05 (What is Plan Mode)
 
 ## In Scope
+
 - **Entering plan mode** — How to activate it (Shift+Tab twice) and start a planning conversation with Claude Code
 - **Scoping with Claude Code** — How to define feature scope and complexity collaboratively before writing code
 - **Design decisions in planning** — Walking through database schema, routes, API endpoints, and component structure
@@ -23,6 +26,7 @@ Learn how to use Claude Code's plan-execute-clear workflow to build a comment sy
 - **Deciding on re-planning** — When to cycle through another plan-execute-clear loop vs. finishing
 
 ## Out of Scope
+
 - Multi-phase plans for massive features (covered in 03.03)
 - Advanced steering techniques with agents.md files (covered in 02.02)
 - Feedback loops and testing strategies (covered in Day 4)
@@ -31,6 +35,7 @@ Learn how to use Claude Code's plan-execute-clear workflow to build a comment sy
 - Refactoring patterns (covered in 06.01)
 
 ## Teaching Sequence
+
 1. **Activate plan mode** — Start by showing Shift+Tab twice to enter plan mode; establishes the entry point for the entire workflow
 2. **Have the scope conversation** — Talk through what you want to build and let Claude Code suggest design decisions; builds shared understanding before any coding
 3. **Walk the design tree** — Iterate on Claude Code's implementation plan until it feels right; ensures both parties are aligned on approach
