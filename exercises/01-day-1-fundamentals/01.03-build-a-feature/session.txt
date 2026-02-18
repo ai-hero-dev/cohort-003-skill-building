@@ -1,0 +1,75 @@
+
+╭─── Claude Code v2.1.44 ────────────────────────────────────────────────────────────────────────────────╮
+│                                   │ Tips for getting started                                           │
+│         Welcome back Pat!         │ Run /init to create a CLAUDE.md file with instructions for Claude  │
+│                                   │ ─────────────────────────────────────────────────────────────────  │
+│                                   │ Recent activity                                                    │
+│              ▐▛███▜▌              │ No recent activity                                                 │
+│             ▝▜█████▛▘             │                                                                    │
+│               ▘▘ ▝▝               │                                                                    │
+│       Opus 4.6 · Claude Max       │                                                                    │
+│   ~/repos/ai/cohort-003-project   │                                                                    │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+❯ /clear 
+  ⎿  (no content)
+
+❯ I would like to create a course review system where students can review courses by leaving a star rating. We don't want to add written reviews, just star rating. These reviews will then be visible everywhere that courses are visible. We want to show the average rating on the courses in the list page and on the course page itself.
+
+● Entered plan mode
+  Claude is now exploring and designing an implementation approach.
+  ⎿  Interrupted · What should Claude do instead?
+                                                                                                          
+❯ /usage                                                                                                  
+  ⎿  Status dialog dismissed                                                                              
+                                                                                                          
+❯ /context                                                                                                
+  ⎿  Context Usage                                                                                        
+     ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁   claude-opus-4-6 · 27k/200k tokens (14%)                                        
+     ⛁ ⛁ ⛁ ⛀ ⛁ ⛶ ⛶ ⛶ ⛶ ⛶                                                                                  
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   Estimated usage by category                                                    
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ System prompt: 3.4k tokens (1.7%)                                            
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ System tools: 16.4k tokens (8.2%)                                            
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ MCP tools: 6.9k tokens (3.5%)                                                
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ Skills: 671 tokens (0.3%)                                                    
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ Messages: 2.3k tokens (1.1%)                                                 
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ Compact buffer: 3k tokens (1.5%)                                             
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛁ ⛀   ⛶ Free space: 167k (83.7%)                                                     
+                                                                                                          
+     MCP tools · /mcp                                                                                     
+     └ mcp__ide__getDiagnostics: 112 tokens                                                               
+     └ mcp__ide__executeCode: 183 tokens                                                                  
+     └ mcp__claude_ai_Figma__get_screenshot: 602 tokens                                                   
+     └ mcp__claude_ai_Figma__create_design_system_rules: 278 tokens                                       
+     └ mcp__claude_ai_Figma__get_design_context: 725 tokens                                               
+     └ mcp__claude_ai_Figma__get_metadata: 627 tokens
+     └ mcp__claude_ai_Figma__get_variable_defs: 588 tokens
+     └ mcp__claude_ai_Figma__get_figjam: 597 tokens
+     └ mcp__claude_ai_Figma__generate_diagram: 558 tokens
+     └ mcp__claude_ai_Figma__get_code_connect_map: 475 tokens
+     └ mcp__claude_ai_Figma__whoami: 106 tokens
+     └ mcp__claude_ai_Figma__add_code_connect_map: 756 tokens
+     └ mcp__claude_ai_Figma__get_code_connect_suggestions: 548 tokens
+     └ mcp__claude_ai_Figma__send_code_connect_mappings: 783 tokens
+
+     Skills · /skills
+
+     Project
+     └ better-sqlite3-rebuild: 49 tokens
+     └ pnpm-not-found: 40 tokens
+
+     User
+     └ scaffold-exercises: 75 tokens
+     └ git-guardrails-claude-code: 68 tokens
+     └ setup-pre-commit: 64 tokens
+     └ design-an-interface: 59 tokens
+     └ obsidian-vault: 59 tokens
+     └ tdd: 53 tokens
+     └ migrate-to-shoehorn: 47 tokens
+     └ write-a-skill: 42 tokens
+     └ request-refactor-plan: 20 tokens
+     └ edit-article: 19 tokens
+     └ write-a-prd: 15 tokens
+                                                                                                          
+Resume this session with:                                                                                 
+claude --resume 68c33810-b165-4f9d-9dd4-96409bfb4bf9

@@ -2,19 +2,19 @@
 
 Claude Code doesn't show your context window usage by default. You need to set this up yourself if you want to monitor it constantly while you're coding.
 
-Having that number right in your status line, visible at a glance, gives you the feedback you need to make good decisions about your session.
+Having that number right in your status line, visible at a glance, gives you the feedback you need to make good decisions about your session. We'll use [`ccstatusline`](https://www.npmjs.com/package/ccstatusline), a community tool that formats Claude Code's session data into a clean status line.
 
 ## Steps To Complete
 
 ### Configure ccstatusline
 
-- [ ] Create the config directory and file
+- [ ] Create the config directory
 
 ```bash
 mkdir -p ~/.config/ccstatusline
 ```
 
-Then create `~/.config/ccstatusline/settings.json` with this content:
+- [ ] Create `~/.config/ccstatusline/settings.json` with this content:
 
 ```json
 {
@@ -50,47 +50,11 @@ Then create `~/.config/ccstatusline/settings.json` with this content:
 
 The key settings here are `"rawValue": true` (shows just the percentage number) and `"bold": true` (makes it stand out).
 
-
-### Create the Wrapper Script
-
-- [ ] Create the Claude scripts directory
-
-```bash
-mkdir -p ~/.claude
-```
-
-
-- [ ] Create `~/.claude/statusline-wrapper.sh`
-
-```bash
-#!/bin/bash
-
-# Read JSON input
-input=$(cat)
-
-# Get context percentage from ccstatusline
-context_pct=$(echo "$input" | npx ccstatusline)
-
-# Output just the percentage
-printf '%s' "$context_pct"
-```
-
-
-- [ ] Make the script executable
-
-```bash
-chmod +x ~/.claude/statusline-wrapper.sh
-```
-
-This script reads your Claude Code session data and pipes it to `ccstatusline` to extract the percentage.
-
-
 ### Update Claude Code Settings
 
 - [ ] Open `~/.claude/settings.json`
 
 If this file doesn't exist yet, create it.
-
 
 - [ ] Add the status line configuration
 
@@ -98,20 +62,18 @@ If this file doesn't exist yet, create it.
 {
   "statusLine": {
     "type": "command",
-    "command": "bash ~/.claude/statusline-wrapper.sh"
+    "command": "npx ccstatusline@latest"
   }
 }
 ```
 
-Preserve any other settings that might already exist in this file.
-
+Preserve any other settings that might already exist in this file. Claude Code pipes session data to this command automatically — `ccstatusline` reads it and outputs the formatted status line.
 
 ### Test Your Setup
 
 - [ ] Restart Claude Code completely
 
 Close the application fully and reopen it.
-
 
 - [ ] Check your status line
 

@@ -1,0 +1,222 @@
+
+╭─── Claude Code v2.1.44 ────────────────────────────────────────────────────────────────────────────────╮
+│                                   │ Tips for getting started                                           │
+│         Welcome back Pat!         │ Run /init to create a CLAUDE.md file with instructions for Claude  │
+│                                   │ ─────────────────────────────────────────────────────────────────  │
+│                                   │ Recent activity                                                    │
+│              ▐▛███▜▌              │ No recent activity                                                 │
+│             ▝▜█████▛▘             │                                                                    │
+│               ▘▘ ▝▝               │                                                                    │
+│       Opus 4.6 · Claude Max       │                                                                    │
+│   ~/repos/ai/cohort-003-project   │                                                                    │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+❯ Give me a breakdown of the tech stack of this repo and what its intended purpose is.  
+
+● Explore(Explore repo tech stack)
+  ⎿  Done (45 tool uses · 50.4k tokens · 1m 23s)
+  (ctrl+o to expand)
+
+● Here's the breakdown:
+
+  Cadence Course Platform
+
+  An online course platform built for technical education — think video lessons, quizzes, progress
+  tracking, and code-focused content authoring.
+
+  Core Stack
+
+  ┌─────────────────┬────────────────────────────────────────────────┐
+  │      Layer      │                   Technology                   │
+  ├─────────────────┼────────────────────────────────────────────────┤
+  │ Framework       │ React Router v7 (SSR enabled)                  │
+  ├─────────────────┼────────────────────────────────────────────────┤
+  │ UI              │ React 19, Tailwind CSS v4, shadcn/ui, Radix UI │
+  ├─────────────────┼────────────────────────────────────────────────┤
+  │ Language        │ TypeScript 5.9 (strict mode)                   │
+  ├─────────────────┼────────────────────────────────────────────────┤
+  │ Build           │ Vite 7                                         │
+  ├─────────────────┼────────────────────────────────────────────────┤
+  │ Database        │ SQLite via better-sqlite3                      │
+  ├─────────────────┼────────────────────────────────────────────────┤
+  │ ORM             │ Drizzle ORM + Drizzle Kit (migrations)         │
+  ├─────────────────┼────────────────────────────────────────────────┤
+  │ Testing         │ Vitest                                         │
+  ├─────────────────┼────────────────────────────────────────────────┤
+  │ Package Manager │ pnpm 9.12                                      │
+  └─────────────────┴────────────────────────────────────────────────┘
+
+  Notable Libraries
+
+  - Monaco Editor — rich code editor for lesson content authoring
+  - Shiki — syntax highlighting for code blocks
+  - Hello Pangea DnD — drag-and-drop (lesson/module ordering)
+  - Marked — markdown rendering
+  - Zod — schema validation
+  - Sonner — toast notifications
+
+  Architecture
+
+  Single monolithic app (not a monorepo). Routes are organized by role:
+
+  - Public — /login, /signup, course browsing
+  - Student — /dashboard, lesson player with video + quizzes, progress tracking
+  - Instructor — course/module/lesson CRUD, quiz builder, student management
+  - Admin — user, course, and category management
+
+  Business logic lives in app/services/ (~22 service files with tests), separate from route handlers.
+
+  Database
+
+  15 SQLite tables covering: users, courses, modules, lessons, enrollments, lesson progress, video watch
+  events, quizzes (questions/options/attempts/answers), purchases, coupons, and teams.
+
+  Key Features
+
+  - Purchasing Power Parity (PPP) — 4-tier geographic pricing with country-based access enforcement
+  - Role-based access — Student, Instructor, Admin, Team roles
+  - Course lifecycle — Draft → Published → Archived
+  - Video tracking — fine-grained playback event recording
+  - Team/org support — team coupons and bulk enrollment
+  - Dev tools — user switching, country override for PPP testing, DB seeding
+
+  Code Quality
+
+  - Prettier + Husky + lint-staged for pre-commit formatting
+  - Vitest with 14+ service test files
+  - TypeScript strict mode with path aliases (~/)
+
+✻ Churned for 1m 33s
+
+❯ How does Power Purchasing Parity, or purchasing Power Parity, actually work in this repo? Which     
+  modules are needed for it to run? Give me a sort of rundown about the stack and how it does PPP.    
+
+● Explore(Deep dive into PPP implementation)
+  ⎿  Done (24 tool uses · 74.1k tokens · 1m 21s)
+  (ctrl+o to expand)
+
+● How PPP Works in This Repo              
+                                                       
+  The Core Idea
+                                                                                                          
+  Students from lower-income countries get discounted course prices. In exchange, their access is
+  geographically locked to the country they purchased from — preventing someone from buying at India      
+  prices and accessing from the US.                                                                     
+
+  The 4-Tier System
+
+  Defined in app/lib/ppp.ts:
+
+  ┌────────┬─────────────────┬─────────────────────────────────────────────────────┐
+  │  Tier  │    Discount     │                  Example Countries                  │
+  ├────────┼─────────────────┼─────────────────────────────────────────────────────┤
+  │ Tier 1 │ 0% (full price) │ US, CA, GB, AU, DE, FR, JP, SG, etc. (12 countries) │
+  ├────────┼─────────────────┼─────────────────────────────────────────────────────┤
+  │ Tier 2 │ 30% off         │ PL, MX, BR, TR, TH, MY, CZ, CL (8 countries)        │
+  ├────────┼─────────────────┼─────────────────────────────────────────────────────┤
+  │ Tier 3 │ 50% off         │ IN, CO, AR, ZA, PH, VN, UA, ID (8 countries)        │
+  ├────────┼─────────────────┼─────────────────────────────────────────────────────┤
+  │ Tier 4 │ 70% off         │ NG, PK, BD, EG, KE, ET (6 countries)                │
+  └────────┴─────────────────┴─────────────────────────────────────────────────────┘
+
+  Countries not in the list default to Tier 1 (full price).
+
+  Country Detection — 3 Layers
+
+  In app/lib/country.server.ts, the system resolves the user's country with fallbacks:
+
+  1. Dev session override — a devCountry value stored in the cookie (for testing)
+  2. Cloudflare CF-IPCountry header — geo-IP from Cloudflare in production
+  3. ip-api.com fallback — external API call using X-Forwarded-For IP
+
+  If all fail, returns null → treated as Tier 1 (full price).
+
+  Price Calculation
+
+  Simple math in calculatePppPrice():
+
+  $49.99 course for a user in India (Tier 3, 50% off):
+    4999 cents × (1 - 0.5) = 2500 cents → $25.00
+
+
+  All prices are in cents (integers) to avoid floating-point issues, with Math.round() for accuracy.
+
+  The Full User Flow
+
+  1. User visits /courses/:slug — country is detected, PPP price is calculated and shown (original price
+  crossed out, discounted price displayed with a badge like "50% off — PPP discount for India")
+  2. User clicks purchase → /courses/:slug/purchase — PPP price recalculated, shown on confirmation page.
+  Two options: "Buy for Myself" or "Buy for Team"
+  3. Purchase is recorded — the purchases table stores pricePaid (discounted amount) and country (the
+  country at purchase time). This country value is immutable and used for all future access checks.
+  4. User accesses a lesson — checkPppAccess() in app/lib/ppp.ts runs on every lesson load:
+    - Free course or PPP disabled? → always allowed
+    - Tier 1 purchase (full price)? → always allowed from anywhere
+    - Tier 2/3/4 purchase and current country matches purchase country? → allowed
+    - Tier 2/3/4 purchase and country mismatch? → blocked with an explanation UI
+
+  Team Purchases & Coupons
+
+  When a manager buys team seats (e.g., 5 seats from India at 50% off):
+  - A single purchase record is created with country: "IN"
+  - 5 coupon codes are generated, each linked to that purchase
+  - When a team member redeems a coupon, couponService.redeemCoupon() checks that the redeemer's current
+  country matches the purchase country
+  - If a team member in the US tries to redeem an India-purchased coupon → rejected
+
+  Instructor Control
+
+  In the course editor (app/routes/instructor.$courseId.tsx), instructors can toggle PPP on/off per
+  course. When disabled, everyone pays full price and there are no geographic restrictions.
+
+  Dev Testing Tools
+
+  The DevUI component (app/components/dev-ui.tsx) provides a dropdown to override your detected country.
+  It hits POST /api/set-dev-country which stores the override in the session cookie. Every page then uses
+  that country for PPP calculations — useful for testing all 4 tiers without a VPN.
+
+  All Files Involved
+
+  File: app/lib/ppp.ts
+  Role: Tier definitions, country mappings, price calc, access checks
+  ────────────────────────────────────────
+  File: app/lib/ppp.test.ts
+  Role: 42 test cases covering all PPP logic
+  ────────────────────────────────────────
+  File: app/lib/country.server.ts
+  Role: 3-layer country detection
+  ────────────────────────────────────────
+  File: app/lib/session.ts
+  Role: Dev country storage in cookie
+  ────────────────────────────────────────
+  File: app/db/schema.ts
+  Role: courses.pppEnabled, purchases.country columns
+  ────────────────────────────────────────
+  File: app/services/purchaseService.ts
+  Role: Stores country with purchase records
+  ────────────────────────────────────────
+  File: app/services/couponService.ts
+  Role: Country validation on coupon redemption
+  ────────────────────────────────────────
+  File: app/routes/courses.$slug.tsx
+  Role: Shows PPP pricing on course page
+  ────────────────────────────────────────
+  File: app/routes/courses.$slug.purchase.tsx
+  Role: Purchase flow with PPP
+  ────────────────────────────────────────
+  File: app/routes/courses.$slug.lessons.$lessonId.tsx
+  Role: PPP access guard on lessons
+  ────────────────────────────────────────
+  File: app/routes/instructor.$courseId.tsx
+  Role: PPP toggle for instructors
+  ────────────────────────────────────────
+  File: app/routes/api.set-dev-country.ts
+  Role: Dev country override endpoint
+  ────────────────────────────────────────
+  File: app/components/dev-ui.tsx
+  Role: Country picker UI for testing
+
+✻ Worked for 2m 10s                                           
+                                                                                                          
+Resume this session with:                                                                                 
+claude --resume e7b7e178-42bb-4a12-b504-d95105b70b9a  
