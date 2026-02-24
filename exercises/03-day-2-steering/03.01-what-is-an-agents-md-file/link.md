@@ -1,0 +1,1 @@
+https://www.humanlayer.dev/blog/writing-a-good-claude-md
