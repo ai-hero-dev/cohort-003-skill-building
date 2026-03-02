@@ -1,79 +1,80 @@
 # Codebase Exploration
 
-Every time an agent interacts with your codebase, it starts from scratch. There's no memory of previous explorations, no accumulated context. This means **exploration becomes the foundational skill** for everything agents do.
+## Introduction
 
-Before an agent can refactor code, add features, or fix bugs, it needs to understand what it's looking at. This exercise teaches you how to guide agents through unfamiliar codebases, and how to use that same process to deepen your own understanding.
+LLMs are stateless. Every time you interact with an agent, it's like hiring a brand new developer who's never seen your codebase before. This means exploration isn't a one-time setup task - it's the foundation of every single agent interaction.
 
-Agents read code like you do. They look at file structure, read key files, and build mental maps of the architecture. This means good naming conventions and clear file organization aren't just nice for humans, they're critical for agent performance too.
+You can use agents to explore unfamiliar codebases faster than you could manually. You'll learn to ask the right questions, spot patterns, and understand architecture through the agent's eyes. This skill unlocks everything else in the course.
 
 ## Steps To Complete
 
-### Explore the Project Structure
+### Exploring the Repository
 
-- [ ] Ask the agent to give you a rundown of the tech stack and main purpose of the repository
+- [ ] Open VS Code and run Claude Code in the terminal
 
-Start broad. What technologies are being used? What problem does this codebase solve? What are the key entry points?
+Use the same prompt structure shown in the transcript:
 
-- [ ] Ask the agent to map out the file structure and identify the most important files
+```
+Tell me what the tech stack of this repo is and what its intended purpose is.
+```
 
-Have it explain why certain files matter more than others. Good file naming should make this obvious.
+- [ ] Watch for sub-agent activity in the Claude Code interface
 
-- [ ] Ask the agent to identify the main architectural patterns being used
+Notice when Claude is exploring files or running commands. This is the agent "thinking out loud" as it discovers the codebase structure.
 
-Look for how code is organized - is it component-based? Layer-based? Domain-driven?
+### Digging Deeper
 
-### Investigate React Router
+- [ ] Ask follow-up questions based on Claude's initial response
 
-- [ ] Use the agent to research React Router's three different modes: Data, Framework, and Declarative
+Here are some angles to explore:
 
-The agent can search the web for this. You're combining codebase knowledge with external documentation.
+```
+How does PPP (Purchasing Power Parity) work in this repo?
+```
 
-- [ ] Have the agent determine which React Router mode is being used in this project
+```
+What user roles and permission levels exist in this application?
+```
 
-This is where you'll focus your exploration. Look at the code patterns, configuration, and file structure. Which mode matches what you see?
+```
+Where is the authentication and authorization logic?
+```
 
-- [ ] Document the evidence that led to your conclusion
+```
+How does the React Router setup work specifically?
+```
 
-What specific files or patterns made it clear which mode is in use?
+```
+What does the database schema look like?
+```
 
-### Understand User Roles and Permissions
+- [ ] Keep track of what questions Claude asks itself
 
-- [ ] Ask the agent to identify all the different user roles in the application
+The agent might need to check multiple files or run commands like `tree` to understand structure. Notice when it does this.
 
-Who can do what? Are there admin users, regular users, guests?
+### Finding Hidden Details
 
-- [ ] Trace how permissions flow through the codebase
+- [ ] Ask Claude to determine which React Router mode this app uses
 
-How does the system check if a user is allowed to perform an action? What components or files handle this?
+The codebase uses React Router, which has three different modes. Can Claude figure out which one? What clues did it look for?
 
-- [ ] Map out the capabilities available to each role
+```
+Which React Router mode is this app using, and how can you tell from the codebase?
+```
 
-Create a simple table showing which roles have access to which features.
+- [ ] Ask Claude about user roles and capabilities in the application
 
-### Learn How PPP Works
+This requires understanding both the code structure and the business logic. What user types can you identify?
 
-- [ ] Ask the agent what PPP stands for in the context of this codebase
+```
+What user roles and capabilities does this application support?
+```
 
-It's a specific business logic pattern. The agent should find where it's implemented.
+### Validating Your Understanding
 
-- [ ] Identify the files and functions responsible for PPP logic
+- [ ] Review what you've learned and write down:
 
-Where in the code does this feature actually work?
-
-- [ ] Explain how PPP integrates with the user roles and permissions system
-
-How do these pieces connect?
-
-### Reflect on the Exploration Process
-
-- [ ] Look back at your exploration steps
-
-What questions did you ask? In what order? Did you get answers efficiently?
-
-- [ ] Note which parts of the codebase were easy to understand and which were confusing
-
-How much did file naming and structure help or hurt?
-
-- [ ] Think about how an agent with poor tool descriptions or weak system prompts might struggle
-
-What would go wrong if the agent didn't know which files to prioritize?
+- The main purpose of this application
+- Key technologies in the tech stack
+- How users and permissions are structured
+- Which React Router mode is being used and why that matters

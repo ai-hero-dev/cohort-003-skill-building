@@ -1,60 +1,115 @@
-# Build A Feature
+# Build a Feature
 
-You're about to build your first feature using an AI coding tool. You've explored the repo, understand the codebase, and now it's time to actually ship something.
+## Introduction
 
-This exercise is about getting hands-on with the AI tool without a detailed plan. You'll be observing how the AI naturally approaches the problem, staying aware of your context window usage, and building a course review system where students can leave reviews on courses.
+You've explored the codebase and understand how it's structured. Now it's time to build your first feature with Claude Code.
+
+We're going to build a course review system where students can leave star ratings on courses. This feature is meaty enough to touch all areas of the codebase, but not so complex that the UI becomes overwhelming. The reviews will show as a simple 1-5 star rating on the courses list page and the course detail page.
+
+Before diving in, understand that this isn't about building the perfect feature on your first try. It's about learning the workflow of prompting, observing what Claude naturally does, and iterating. You'll also learn to monitor your context usage as you build, watching for the "dumb zone" where token consumption starts degrading quality.
 
 ## Steps To Complete
 
-### Start With A Quick Prompt
+### Starting Your Claude Code Session
 
-- [ ] Write a 1-2 sentence description of what you want to build
+- [ ] Open Claude Code in VS Code (or run `/clear` if you have an existing session)
 
-Use a dictation tool if you have one. Just talk it out casually. You don't need a perfect plan before you start. The plan emerges through conversation with the AI.
+This clears your conversation history so you start fresh.
 
-Your prompt might look something like: "I want to build a course review system where students can submit reviews and see reviews from other students."
 
-### Observe The AI's Natural Instincts
+- [ ] Write a lightweight prompt describing what you want to build
 
-- [ ] Let the AI respond without steering it in any particular direction
+Keep it to 1-2 sentences. Something like:
 
-At this stage, you're not customizing the approach or pushing back. Just observe what the AI naturally does.
+```
+I would like to create a course review system where students can review courses by leaving a star rating. We don't want to add written reviews, just star rating. These reviews will then be visible everywhere that courses are visible. We want to show the average rating on the courses in the list page and on the course page itself.
+```
 
-Take notes on:
-- How it breaks down the problem
-- What architectural choices it makes
-- What database schema it suggests
+Don't overthink this. You're not writing a detailed specification, just enough to point Claude in the right direction.
 
-### Monitor Your Context Window
 
-- [ ] Use the `/usage` command frequently to check how much context you've consumed
+### Observing Claude's Default Behavior
 
-The `/usage` command shows you a UI displaying your token usage. There's a critical threshold to watch for.
+- [ ] Send your prompt and watch what Claude does next
 
-You're in the "smart zone" when you're below 80,000 tokens (roughly 40% of the context window). Once you approach or exceed that, you're in the "dumb zone" where the AI's performance starts degrading.
+Pay close attention to:
 
-Keep checking `/usage` throughout your entire build process.
+- Does it spawn an Explore sub-agent to understand the codebase?
+- What files does it read first?
+- What questions does it ask you?
+- What's its overall approach?
 
-### Build The Feature
+Take notes. You're in observation mode, let Claude think out loud before you steer.
 
-- [ ] Once you feel confident the AI understands what you want, activate accept all edits mode
 
-In Claude Code, press **shift+tab** to enable accept all edits mode. The AI will stop asking for confirmation on every file it writes and will start building the feature automatically.
+- [ ] Check your context usage with `/context`
 
-### Test The Complete Flow
+You'll see a bar chart showing token consumption. Look for the main orchestrator agent's usage. Around 40% usage is when you should start getting nervous about running out of space.
 
-- [ ] Verify that students can submit a review
 
-- [ ] Verify that reviews are saved properly
+### Reviewing Claude's Plan
 
-- [ ] Verify that reviews appear where they should
+- [ ] Wait for Claude to generate a plan and read it carefully
 
-Test the entire end-to-end flow: submit, save, display.
+Claude will show you the steps it intends to take, the files it will touch, and how it will verify the feature works.
 
-### Debug With The AI
 
-- [ ] If something breaks or doesn't work as expected, debug it in conversation with the AI
+- [ ] Ask clarifying questions if needed
 
-Testing and debugging are part of the normal feature build cycle. Work through issues together with the AI while continuing to monitor your context usage.
+If something doesn't match your vision, push back. For example, if Claude suggests adding ratings to the dashboard but you don't want that, tell it. This is your chance to steer before implementation starts.
 
-Stay in the smart zone. That's your priority throughout this entire process.
+
+### Building the Feature
+
+- [ ] Accept Claude's changes as it implements
+
+Once you've reviewed the plan, you can flip to "accept all edits" mode (shift+tab cycles through submission modes). This lets Claude move faster without asking for permission on every file change.
+
+
+- [ ] Keep watching `/context` as Claude works
+
+If you're approaching 80K tokens (40% of the window), that's your signal to be more cautious. Ask Claude to summarize what's left or consider wrapping up the current phase.
+
+
+- [ ] Wait for Claude to finish implementing all the steps
+
+This includes database schema changes, service functions, route updates, and UI components. It will also run migrations and handle any setup commands.
+
+
+### Testing the Full Feature
+
+- [ ] Log into the dev UI as a student
+
+Navigate to a course detail page. You should see a rating widget in the sidebar (if you're enrolled in the course).
+
+
+- [ ] Submit a star rating by clicking on one of the stars
+
+Watch for a toast notification confirming the rating was saved. The average rating display should update immediately.
+
+
+- [ ] Change your rating by clicking a different star
+
+Verify that the rating updates (upsert behavior) without errors.
+
+
+- [ ] Visit the courses list page (`/courses`)
+
+You should see the average rating displayed on course cards next to the instructor name, formatted as a filled star icon followed by the rating and count.
+
+
+- [ ] Test as different user types
+
+Log in as a non-enrolled user and verify you see the rating display but no widget to submit. Log in as an instructor and verify you don't see a rating widget on your own course.
+
+
+### Debugging if Things Break
+
+- [ ] If something doesn't work, describe the issue to Claude in plain language
+
+Rather than trying to fix it yourself, tell Claude what you expected to happen and what actually happened. Stay in conversation with the AI, it's part of the natural build cycle.
+
+
+- [ ] Run `/context` again to check how much space you have left
+
+If you're running low, you might need to wrap up or start a fresh session for the next phase of work.

@@ -1,87 +1,81 @@
-# Steering An Agent With The AGENTS.md File
+# Steering an Agent with the CLAUDE.md File
 
-Now you understand what an `AGENTS.md` file is. Time to try it out.
+You know what `CLAUDE.md` files are. Now it's time to put one to work.
 
-You're going to practice the real skill here: noticing a pattern the agent uses that you don't like, documenting it in `AGENTS.md`, and watching the agent adapt. This is the steering loop in action.
+In this exercise, you're going to build a bookmarks feature for lessons. The codebase you're working with has some patterns baked into it that you probably don't want Claude to replicate.
+
+Specifically, functions with multiple parameters of the same type use positional parameters instead of object parameters. This is easy to get wrong when calling the function, you could swap `userId` and `postId` and the code would still compile.
+
+Your job is to steer Claude away from this pattern using your `CLAUDE.md` file.
 
 ## Steps To Complete
 
 ### Understand the Bookmarks Feature
 
-- [ ] Review the bookmarks feature you're about to build
+- [ ] Read through the `plan.md` file provided below
 
-This is a simple feature: users can bookmark lessons, and the system stores those bookmarks. It's straightforward enough that the agent can build it, but complex enough that you'll see the anti-patterns emerge.
+This outlines what you're building: a simple bookmarks feature where students can bookmark lessons inline. Pay special attention to the files you'll need to create and modify.
 
-### Run the Agent and Notice the Problem
+### Run Claude Code Against the Plan
 
-- [ ] Run your agent in plan mode to build the bookmarks feature
+- [ ] Open a new Claude Code session
 
-Let the agent work without any steering guidance. Watch what it generates.
+- [ ] Copy the entire `plan.md` file and paste it into Claude Code
 
-- [ ] Identify the positional parameters pattern
+Watch Claude work. As it explores the codebase and starts building, pay close attention to the code it generates. **Is it using positional parameters, or object parameters?**
 
-Look at the code the agent generated. You should see function calls using positional arguments instead of named parameters. For example:
+### Add Your First Steering Rule to CLAUDE.md
+
+- [ ] Create (or update) your `CLAUDE.md` file with the rule about function parameters
+
+When you have a function with more than one parameter with the same type, use an object parameter instead of positional parameters:
 
 ```ts
-// Positional parameters (what the agent might generate)
-bookmarkLesson(userId, lessonId, timestamp);
+// BAD
+const addUserToPost = (userId: string, postId: string) => {};
 
-// Named parameters (what you prefer)
-bookmarkLesson({ userId, lessonId, timestamp });
+// GOOD
+const addUserToPost = (opts: { userId: string; postId: string }) => {};
 ```
 
-Document what you see. Where does the agent use positional parameters? What function calls are affected?
+### Test the Steering
 
-### Add Steering to Your AGENTS.md File
+- [ ] Use the `/memory` command to inject this rule into Claude's active context
 
-- [ ] Run the `/memory` command from inside Claude
+This updates both your `CLAUDE.md` file and Claude's immediate context, so you won't need to restart the session.
 
-- [ ] Choose the local, project memory (not your global, user memory)
+- [ ] Ask Claude to regenerate or continue with the feature implementation
 
-- [ ] Add a rule against positional parameters
+Watch whether Claude's new code follows the object parameter pattern. If it does, the steering worked.
 
-Write a clear, specific rule. Something like:
 
-```
-## Code Style
+### Find One More Anti-Pattern (Optional)
 
-When writing function calls, always use named parameters instead of positional arguments. This makes code more readable and maintainable.
+If you want to go deeper, look through the codebase and find one more pattern you'd like to steer against.
 
-Example:
-- Instead of: `createBookmark(userId, lessonId, timestamp)`
-- Use: `createBookmark({ userId, lessonId, timestamp })`
-```
+Here are some ideas:
 
-1. It saves the rule to your `AGENTS.md` file
-2. It adds the rule to your agent context immediately, so you don't need to restart Claude
+- **`any` types in TypeScript** - The codebase already has some. Guide Claude to use proper types instead.
+- **More positional parameters** - Are there other functions in the codebase using this pattern? Flag them.
+- **Missing error handling** - Does the code assume happy paths? Add try/catch guidance.
+- **Inconsistent naming** - Look for camelCase vs snake_case inconsistencies.
 
-### Verify the Steering Worked
+- [ ] Add your second steering rule to `CLAUDE.md`
 
-- [ ] Run the agent again on the same bookmarks feature
+- [ ] Inject it with `/memory` and test whether Claude respects it
 
-Now that you've added the rule to `AGENTS.md`, run the agent to build or rebuild the bookmarks feature.
+### Verify the Feature Works
 
-- [ ] Compare the generated code
+- [ ] Run the bookmarks feature locally (via `pnpm run dev` or your dev server)
 
-Look at the function calls in the new code. Are they using named parameters now? Did the agent listen to your steering?
+- [ ] Log in as an enrolled student and navigate to a lesson
 
-If yes, you've successfully completed the steering loop. If no, refine your `AGENTS.md` rule and try again.
+- [ ] Click the bookmark button in the metadata row and verify it toggles
 
-### (Optional) Find Your Own Anti-Pattern
+- [ ] Check that bookmarked lessons show a filled bookmark icon in the course sidebar and course detail view
 
-If you want to go deeper, find another pattern in the codebase you'd like to steer against.
+- [ ] Unbookmark a lesson and confirm the icon disappears everywhere
 
-- [ ] Look for patterns you don't like
+---
 
-Consider these common agent anti-patterns:
-
-- **`any` types in TypeScript** - the agent uses `any` as a shortcut instead of defining proper types
-- **Missing error handling** - functions without try/catch blocks around async operations
-
-- [ ] Pick one pattern and document it using `/memory`
-
-Write a clear rule, similar to what you did for positional parameters.
-
-- [ ] Test that the agent follows the new rule
-
-Run the agent again. Does it respect the new steering?
+**The core skill here:** Notice a pattern the agent is using that you don't like. Write a rule in `CLAUDE.md` to steer it toward better behavior. Verify it worked. That's the loop you just completed.

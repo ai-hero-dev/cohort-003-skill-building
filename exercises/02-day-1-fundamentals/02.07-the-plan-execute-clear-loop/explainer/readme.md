@@ -1,91 +1,104 @@
-# The Plan/Execute/Clear Loop in Action
+# The Plan-Execute Loop
 
-You've learned what plan mode is and how to use it in Claude Code. Now it's time to put that knowledge to work by actually building something.
+You now understand how Claude Code works. You've learned about plan mode and set up context percentages in your status line. You're ready to kick off the plan-execute loop.
 
-In this exercise, you'll build a comment system for a learning platform. Students can leave comments, and instructors or admins can hide certain comments and view them in a separate space. This is a real feature with moving parts: database schema, API endpoints, component structure. This makes it perfect for practicing the plan/execute/clear loop.
+This feature lets you add lesson comments where students can discuss lesson content. Instructors can moderate by deleting comments. It's a great playground to experiment with plan mode - you can keep it simple or add moderation dashboards, permission systems, and more.
 
-The goal isn't just to build the feature. It's to get comfortable with how planning, executing, and clearing context work together in practice.
+The point is to use a small prompt and watch how Claude Code turns it into a real, fleshed-out plan.
 
 ## Steps To Complete
 
-### Enter Plan Mode and Scope the Work
+### Setting Up Your Session
 
-- [ ] Press Shift+Tab twice to enter plan mode in Claude Code
+- [ ] Open Claude Code and start a fresh session
 
-This puts you in the planning phase where you're thinking, not coding.
+Clear your previous work with `/clear`.
 
-- [ ] Have a conversation with Claude Code about what you want to build
+- [ ] Write a simple prompt requesting the feature
 
-Discuss the scope. You can build a simple comment system, or you can add instructor/admin features, comment hiding, comment stats, or whatever else interests you. Use this conversation to settle on what you're actually building.
+```
+Make it so that students can comment on lessons and instructors can moderate their comments.
+```
 
-- [ ] Walk through the design decisions with Claude Code
+Keep it brief. The goal is to see how well Claude Code can expand a simple idea into a detailed implementation plan.
 
-Talk about:
-- Database schema
-- Routes and API endpoints
-- Component structure
-- How visibility rules will work (who can see what)
-- Any other architectural decisions
 
-- [ ] Review the plan or let Claude Code know you're ready to move forward
+### Planning Phase
 
-You don't have to review the written plan, but you should have a gut feeling that you and Claude Code are on the same page about what you're building.
+- [ ] Enter plan mode by pressing Shift+Tab twice
 
-### Execute the Build
+Watch the status line show `plan mode on`. Claude will begin exploring your codebase and designing the implementation.
 
-- [ ] Press Shift+Tab once to enter execution mode
+- [ ] Watch Claude ask clarifying questions
 
-Claude Code will offer you a choice: clear the context and use just the plan, or keep the context and continue. Check your context meter in the status line.
+Claude will interrogate design decisions with you. Answer each question honestly:
 
-- [ ] Make a context decision
+- Should comments be editable?
+- What happens when a comment is deleted (soft delete vs hard delete)?
+- Who can see comments (enrolled users only, or everyone)?
+- Should comments be flat or threaded?
+- How should they be sorted?
+- What's the character limit?
+- Where should the comments section appear?
 
-If you've used a lot of context in planning (say, 60%+ of your budget), clear the context and work from the plan. If you're still under 20-30%, you might keep the context and move forward. Watch that meter like a hawk.
+Write down your answers as Claude asks.
 
-- [ ] Ask Claude Code for its implementation plan for the first feature
+- [ ] Review the generated plan
 
-Don't just say "build it." Ask Claude to walk you through how it's going to tackle the feature, then iterate on that plan until it sounds sensible.
+Once Claude finishes asking questions, it will output a detailed plan in your plan file. Read through it carefully. Does it match your vision? If not, ask Claude to adjust specific sections.
 
-- [ ] Let Claude Code build, but stay alert
 
-You're mostly watching now. If Claude Code does something that looks wrong, uses a strange library, writes obvious bugs, doesn't match your design decisions, or doesn't fit the project's existing patterns, press Escape and steer it back on track.
+### Execution Phase
 
-Things to watch for:
-- Hallucinated libraries or dependencies
-- Code that doesn't match the rest of your project
-- File naming or casing that breaks conventions
-- Logic that doesn't match your design
+- [ ] Exit plan mode and move to execution
 
-### Test, Review, and Decide What's Next
+Press Shift+Tab once to cycle out of plan mode and into execution mode. Claude will ask whether to clear context or keep it. If you're still in the smart zone (under 40% context), you can keep everything. If you're approaching the dumb zone, consider clearing context and starting fresh with just the plan.
 
-- [ ] Test the feature end-to-end
+- [ ] Let Claude build while you watch
 
-Make sure the comment system works as you scoped it. Students can leave comments. Instructors/admins can hide them and view them separately. Everything functions.
+Claude will start implementing the feature step by step. Your job is mostly passive - watch the execution unfold. Claude will add the database schema, create services, update routes, build UI components, and seed test data.
 
-- [ ] Review the code
+- [ ] Stop and steer if something looks wrong
 
-Check that it's clean, follows your project's patterns, and does what you intended.
+If Claude does something you don't like, press Escape to pause. Common issues to watch for:
 
-- [ ] Check against your scope
+- Using hallucinated libraries that don't exist in your project
+- Obvious bugs or syntax errors
+- Code that doesn't match your project's patterns or conventions
+- File naming that breaks conventions (wrong casing, wrong location)
 
-Did you build everything you said you would? Are there obvious bugs or missing pieces?
+When you spot a problem, describe what should happen instead and let Claude course-correct.
 
-- [ ] Decide if you need another cycle
+- [ ] Let type checking and tests run
 
-If you find bugs or incomplete features, you can either clear context and start a new plan-execute cycle, or, if you still have context budget left, keep going and fix things in the current window. Your choice depends on how much context you've used and how much work remains.
+Claude will run `npx tsc --noEmit` and `npm test` to verify everything works. Watch for any failures. If tests pass and types check, you're in good shape.
 
-### Handle Context Overflow (If Needed)
 
-- [ ] If context gets scary, dump your progress
+### Observing and Reflecting
 
-Ask Claude Code to output:
-- The current plan
-- A progress report (what's been done, what's left)
-- Everything else relevant to continuing
+- [ ] Observe the context window throughout
 
-- [ ] Clear the context with `/clear`
+Watch how the context percentage grows as Claude explores files and generates the plan. Take note of when it spikes - this helps you understand what Claude is doing behind the scenes.
 
-- [ ] Restart from the artifacts
+During execution, watch how quickly context climbs. The solution video shows jumping from 35% to 48% by the end - notice how fast that happens when Claude is actually building.
 
-Point Claude Code at the saved plan, progress report, and the changed files in git. It should be able to pick up where you left off.
+- [ ] Write down your observations
 
-You probably won't need this for a simple comment system, but it's a useful escape hatch if scope gets bigger than expected.
+Record what you notice:
+
+- How much context did exploration use?
+- Did Claude ask questions you didn't expect?
+- Did the plan surprise you with ideas you hadn't considered?
+- How long did the entire planning phase take?
+- How much context was used during execution?
+- Did Claude build things in the order you expected?
+- Were there any bugs or issues that needed steering?
+- Did you feel confident letting Claude build, or did you want to intervene?
+
+- [ ] Test the feature manually
+
+Log into the app as different users (students, instructors, admins) and verify the comments system works as designed. Try posting comments, deleting them, and checking that permissions work correctly.
+
+- [ ] (Optional) Ask questions in the Discord
+
+Share your observations and any questions with the cohort. What behaviors did you notice? What would you do differently next time?
