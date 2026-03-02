@@ -1,0 +1,239 @@
+ ▐▛███▜▌   Claude Code v2.1.63                                                 
+▝▜█████▛▘  Opus 4.6 · Claude Max                                               
+  ▘▘ ▝▝    ~/repos/ai/cohort-003-project                                       
+                                                                               
+❯ /write-a-prd I want an instructor analytics dashboard primarily focused on   
+revenue, and I would like to hammer out with you exactly what that entails and 
+what that looks like. This should obviously only be accessible to instructors. 
+Although admins should be able to see it too Instructors can only view         
+analytics on their own courses. Instructors should probably have a single      
+analytics dashboard which displays the information for all of their courses.   
+                                                                               
+● Let me explore the codebase first to understand the current data model, user 
+  roles, and revenue-related structures before we dive into the details.       
+                                                                               
+● Explore(Explore codebase for PRD) Sonnet 4.6                                 
+  ⎿  Done (28 tool uses · 78.0k tokens · 1m 38s)                               
+  (ctrl+o to expand)                                                           
+                                                                               
+● Great, I've got a solid understanding of the codebase. Here's what I'm       
+  working with:                                                                
+                                                                               
+  - Users have a role field: student | instructor | admin
+  - Courses link to an instructor via instructorId
+  - Purchases table is the core revenue source — stores pricePaid (cents),
+  country, courseId, userId, createdAt
+  - PPP discounting exists (4 tiers based on country)
+  - Team purchases create one purchase record + N coupons
+  - No existing analytics/revenue dashboard anywhere
+  - No refunds, no Stripe, no revenue sharing model currently
+
+  Let me start drilling into the details. I have several questions grouped by
+  area:
+
+● User answered Claude's questions:
+  ⎿  · What are the key revenue metrics you want displayed on the
+     dashboard? For example: total lifetime revenue, revenue per course,
+     revenue over time (charts), average order value, PPP discount impact,
+      team vs individual purchase breakdown, geographic breakdown by
+     country? → Revenue totals + time
+     · For revenue over time, what time granularity and filtering do you
+     want? Should instructors be able to filter by date range, or is a
+     fixed view (e.g. last 30 days, last 12 months) sufficient? → Fixed
+     periods
+     · Should the dashboard include enrollment metrics alongside revenue
+     (e.g. total enrollments, enrollment rate over time), or should it be
+     purely revenue-focused? → Revenue + enrollments + ratings
+
+● Good, so we're going with focused revenue metrics (totals + time trend),
+  fixed period filters, and including enrollments + ratings alongside. Let me
+  dig deeper.
+
+● User answered Claude's questions:
+  ⎿  · For the dashboard layout, how should the per-course data be
+     presented? The dashboard shows all of the instructor's courses on one
+      page — how do you want to break that down? → Summary cards + table
+     · For the revenue-over-time visualization, what kind of chart do you
+     envision? Note: this will need a charting library unless we keep it
+     simple. → Line chart
+     · For ratings, what should be shown? The current schema has
+     courseRatings with a 1-5 rating per user per course. → Average +
+     count only
+
+● Clear. Summary cards up top, a per-course table below, line chart for revenue
+   trend, and simple average + count for ratings. A few more questions:
+
+● User answered Claude's questions:
+  ⎿  · Which fixed time periods should be available for filtering the
+     revenue trend line chart? → 7d / 30d / 12mo / All
+     · For the admin view — should admins see a platform-wide analytics
+     dashboard (aggregating ALL instructors), or should they just be able
+     to access any individual instructor's dashboard? → View any
+     instructor's
+     · Should the summary cards at the top of the dashboard also respect
+     the selected time period, or should they always show all-time totals?
+      → Respect time filter
+
+● Great. Now let me nail down the specifics of the UI elements:
+
+● User answered Claude's questions:
+  ⎿  · What summary cards should appear at the top? These will all respect
+      the selected time period. → Revenue + Enrollments + Avg Rating
+     · What columns should appear in the per-course table below the
+     summary cards? → Detailed
+     · How should admins access an instructor's analytics? They need a way
+      to navigate to any instructor's dashboard. → Link from admin users
+     page
+
+● Almost there. A few final questions on the chart details and some edge cases:
+
+● User answered Claude's questions:
+  ⎿  · For the line chart's X-axis granularity: Last 7 days should show
+     daily points. What about the other periods? → Auto-scale
+     · Should the per-course table also be filtered by the selected time
+     period, or should it always show all-time data for each course? →
+     Filtered by period
+     · Should the time period filter be stored in the URL (as a search
+     param) or as client-side state? URL params mean the page is
+     linkable/bookmarkable. → URL search param
+     · What should happen if an instructor has no courses or no purchases
+     yet? → Empty state message
+
+● Good, the picture is getting clear. A couple more details to lock down:
+
+● User answered Claude's questions:
+  ⎿  · When an admin clicks 'View Analytics' for an instructor on
+     /admin/users, what should the URL look like? →
+     /admin/instructor/5/analytics
+     · Should the line chart show just revenue, or should it also overlay
+     enrollment count as a second line? → Revenue only
+     · Should the per-course table be sortable by clicking column headers?
+      → Yes, sortable
+
+● Excellent. I now have a complete picture of the feature. Let me outline the
+  modules needed, then we can finalize.
+
+  Proposed Modules
+
+  Here's what I see us building:
+
+  1. analyticsService (new service) — The deep module. Encapsulates all DB
+  query logic behind a clean interface. Takes an instructor ID + time period
+  and returns:
+  - Summary data (total revenue, total enrollments, avg rating + count)
+  - Revenue time series (data points for the line chart)
+  - Per-course breakdown (name, list price, revenue, sales, enrollments, avg
+  rating, rating count)
+
+  2. Instructor analytics route — /instructor/analytics
+  - Loader: auth check (must be instructor), reads ?period= search param, calls
+   analyticsService with their own ID
+  - Component: renders the shared dashboard
+
+  3. Admin instructor analytics route —
+  /admin/instructor/:instructorId/analytics
+  - Loader: auth check (must be admin), reads instructorId from URL params +
+  period from search params, calls analyticsService
+  - Component: renders the same shared dashboard
+
+  4. Shared AnalyticsDashboard component — Used by both routes. Contains:
+  - Period selector (7d/30d/12mo/All tabs)
+  - 3 summary cards
+  - Revenue line chart (recharts)
+  - Sortable per-course table
+
+  5. Admin users page modification — Add "View Analytics" link next to
+  instructor users
+
+  6. New dependency: recharts — For the line chart
+
+● User answered Claude's questions:
+  ⎿  · Do these modules match your expectations? Anything you'd add,
+     remove, or restructure? → Looks good
+     · For testing, I'd recommend writing tests for the analyticsService
+     since it contains all the query logic. The routes/components are thin
+      wrappers. Which modules do you want tested? → None
+
+● One quick note — the project's CLAUDE.md specifies that any file named as a
+  "service" (e.g. analyticsService.ts) should have accompanying tests. Since
+  this is a project convention, should we:
+
+● User answered Claude's questions:
+  ⎿  · The CLAUDE.md convention requires tests for all service files. The
+     analyticsService would normally need tests per this rule. How do you
+     want to handle this? → Follow convention, add tests
+
+● Good, tests will be written for the analyticsService per convention. Let me
+  check one thing before writing the PRD.
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Confirmed — recharts is a new dependency. I have everything I need. Let me
+  write the PRD and submit it as a GitHub issue.
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ /write-a-prd 
+
+● We already completed the interview and module design. Let me write the PRD
+  and submit it as a GitHub issue now.
+
+● Bash(gh repo view --json nameWithOwner -q .nameWithOwner)
+  ⎿  Tool use rejected with user message: Use the second write-a-prd skill,
+     which says to do it as a local file
+
+● Got it, I'll write it as a local file. Let me check where to put it.
+
+● Read 1 file (ctrl+o to expand)
+
+● Write(prd/instructor-analytics-dashboard.md)
+  ⎿  Wrote 116 lines to prd/instructor-analytics-dashboard.md
+      1 # PRD: Instructor Revenue Analytics Dashboard
+      2
+      3 ## Problem Statement
+      4
+      5 Instructors on the platform have no visibility into how their co
+        urses are performing financially. There is no way for an instruc
+        tor to see total revenue, revenue trends over time, or per-cours
+        e breakdowns. Admins similarly have no way to view an instructor
+        's revenue performance. This makes it impossible for instructors
+         to make informed decisions about pricing, marketing, or course
+        development priorities.
+      6
+      7 ## Solution
+      8
+      9 A dedicated analytics dashboard for instructors that provides a
+        revenue-focused overview of all their courses on a single page.
+        The dashboard includes summary cards (total revenue, total enrol
+        lments, average rating), a revenue-over-time line chart, and a d
+        etailed per-course table. A time period filter (7 days, 30 days,
+         12 months, All time) controls the data shown across all section
+        s of the page. Admins can access any instructor's analytics dash
+        board through a link on the admin users page.
+     … +106 lines (ctrl+o to expand)
+
+● PRD written to prd/instructor-analytics-dashboard.md. Here's a summary of
+  what's captured:
+
+  Feature: Instructor Revenue Analytics Dashboard
+
+  Routes: /instructor/analytics (instructors) and
+  /admin/instructor/:instructorId/analytics (admins)
+
+  Dashboard contents:
+  - 3 summary cards (Total Revenue, Total Enrollments, Average Rating) — all
+  respect the time filter
+  - Revenue line chart (recharts) with auto-scaling granularity
+  - Sortable per-course table (Course Name, List Price, Revenue, Sales Count,
+  Enrollments, Avg Rating, Rating Count)
+  - Time period tabs: 7d / 30d / 12mo / All — stored as URL search param,
+  defaults to 30d
+
+  Key decisions:
+  - No schema changes needed
+  - New analyticsService with tests (per project convention)
+  - Shared AnalyticsDashboard component used by both routes
+  - "View Analytics" link added to admin users page
+  - New recharts dependency
+
+  22 user stories covering instructor, admin, student, and unauthenticated user
+   perspectives.

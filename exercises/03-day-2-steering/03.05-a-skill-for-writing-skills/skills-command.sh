@@ -1,0 +1,1 @@
+npx skills add mattpocock/skills/write-a-skill

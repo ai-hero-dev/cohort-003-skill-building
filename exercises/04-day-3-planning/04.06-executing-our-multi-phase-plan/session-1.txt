@@ -1,0 +1,246 @@
+                                                                                                            
+ ▐▛███▜▌   Claude Code v2.1.63                                                                              
+▝▜█████▛▘  Opus 4.6 · Claude Max                                                                            
+  ▘▘ ▝▝    ~/repos/ai/cohort-003-project                                                                    
+                                                                                                            
+❯ /clear                                                                                                    
+  ⎿  (no content)                                                                                           
+                                                                                                            
+❯ @prd/instructor-analytics-dashboard.md @plans/instructor-analytics-dashboard.md Do phase 1                
+                                                                                                            
+● I'll start by exploring the codebase to understand existing patterns before implementing Phase 1.         
+                                                                                                            
+● Explore(Explore codebase patterns)                                                                        
+  ⎿  Done (26 tool uses · 62.0k tokens · 1m 3s)                                                             
+  (ctrl+o to expand)                                                                                        
+                                                                                                            
+● Now let me read the key files I need to reference directly.                                               
+                                                                                                            
+● Read 7 files (ctrl+o to expand)                                                                           
+                                                                                                            
+● Let me also check the validation utilities and an existing service to understand Drizzle query patterns.  
+                                                                                                            
+● Read 3 files (ctrl+o to expand)
+
+● Let me check what UI components are available.
+
+● Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+● Now I have a full understanding of the codebase. Let me create the tasks and start implementing Phase 1.
+
+● Starting with the analytics service.
+
+● Write(app/services/analyticsService.ts)
+  ⎿  Wrote 109 lines to app/services/analyticsService.ts
+      1 import { sql, eq, and, gte } from "drizzle-orm";
+      2 import { db } from "~/db";
+      3 import { purchases, enrollments, courseRatings, courses } from "~/db/schema";
+      4
+      5 // ─── Analytics Service ───
+      6 // Encapsulates all database query logic for the instructor analytics dashboard.
+      7 // Takes an instructor ID and time period, returns summary data.
+      8
+      9 export type TimePeriod = "7d" | "30d" | "12m" | "all";
+     … +99 lines (ctrl+o to expand)
+
+● Now the tests.
+
+● Write(app/services/analyticsService.test.ts)
+  ⎿  Wrote 377 lines to app/services/analyticsService.test.ts
+       1 import { describe, it, expect, beforeEach, vi } from "vitest";
+       2 import { createTestDb, seedBaseData } from "~/test/setup";
+       3 import * as schema from "~/db/schema";
+       4
+       5 let testDb: ReturnType<typeof createTestDb>;
+       6 let base: ReturnType<typeof seedBaseData>;
+       7
+       8 vi.mock("~/db", () => ({
+       9   get db() {
+      10     return testDb;
+     … +367 lines (ctrl+o to expand)
+
+● Let me fix the unused imports.
+
+● Update(app/services/analyticsService.ts)
+  ⎿  Added 1 line, removed 1 line
+      1 -import { sql, eq, and, gte } from "drizzle-orm";                                            
+      1 +import { sql, eq } from "drizzle-orm";                                                      
+      2  import { db } from "~/db";
+      3  import { purchases, enrollments, courseRatings, courses } from "~/db/schema";
+      4  
+
+● Now let me run the tests to see if the service works.
+
+● Bash(npx vitest run app/services/analyticsService.test.ts 2>&1)
+  ⎿   RUN  v3.2.4 /home/mattpocock/repos/ai/cohort-003-project
+
+      ✓ app/services/analyticsService.test.ts (12 tests) 35ms
+     … +6 lines (ctrl+o to expand)
+
+● All 12 tests pass. Now let me build the UI components.
+
+● Let me check how the Tabs component works and how the Card component is structured.
+
+● Read 1 file (ctrl+o to expand)
+
+● Write(app/components/analytics-dashboard.tsx)
+  ⎿  Wrote 106 lines to app/components/analytics-dashboard.tsx
+       1 import { useNavigate, useSearchParams } from "react-router";
+       2 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+       3 import { cn, formatPrice } from "~/lib/utils";
+       4 import { DollarSign, Users, Star } from "lucide-react";
+       5 import type { TimePeriod, AnalyticsSummary } from "~/services/analyticsService";
+       6
+       7 const PERIODS: { value: TimePeriod; label: string }[] = [
+       8   { value: "7d", label: "7 days" },
+       9   { value: "30d", label: "30 days" },
+      10   { value: "12m", label: "12 months" },
+     … +96 lines (ctrl+o to expand)
+
+● Now the instructor analytics route.
+
+● Write(app/routes/instructor.analytics.tsx)
+  ⎿  Wrote 121 lines to app/routes/instructor.analytics.tsx
+       1 import { Link, data, isRouteErrorResponse } from "react-router";
+       2 import type { Route } from "./+types/instructor.analytics";
+       3 import { getCurrentUserId } from "~/lib/session";
+       4 import { getUserById } from "~/services/userService";
+       5 import { UserRole } from "~/db/schema";
+       6 import {
+       7   getAnalyticsSummary,
+       8   type TimePeriod,
+       9 } from "~/services/analyticsService";
+      10 import { AnalyticsDashboard } from "~/components/analytics-dashboard";
+     … +111 lines (ctrl+o to expand)
+
+● Now register the route in app/routes.ts.
+
+● Update(app/routes.ts)
+  ⎿  Added 1 line
+      19        "routes/courses.$slug.lessons.$lessonId.tsx"
+      20      ),
+      21      route("instructor", "routes/instructor.tsx"),
+      22 +    route("instructor/analytics", "routes/instructor.analytics.tsx"),                      
+      23      route("instructor/new", "routes/instructor.new.tsx"),
+      24      route("instructor/:courseId", "routes/instructor.$courseId.tsx"),
+      25      route(
+
+● Now add the Analytics link to the sidebar.
+
+● Update(app/components/sidebar.tsx)
+  ⎿  Added 1 line
+       4  import { UserRole } from "~/db/schema";
+       5  import { UserAvatar } from "~/components/user-avatar";
+       6  import {
+       7 +  BarChart3,                                                                               
+       8    BookOpen,
+       9    LayoutDashboard,
+      10    GraduationCap,
+
+● Update(app/components/sidebar.tsx)
+  ⎿  Added 6 lines
+      68      roles: [UserRole.Instructor],
+      69    },
+      70    {
+      71 +    label: "Analytics",                                                                    
+      72 +    to: "/instructor/analytics",                                                           
+      73 +    icon: <BarChart3 className="size-4" />,                                                
+      74 +    roles: [UserRole.Instructor],                                                          
+      75 +  },                                                                                       
+      76 +  {                                                                                        
+      77      label: "Manage Users",
+      78      to: "/admin/users",
+      79      icon: <Users className="size-4" />,
+
+● Now let me run the tests and type-check.
+
+● Bash(npx tsc --noEmit 2>&1)
+  ⎿  Error: Exit code 2
+     app/routes/instructor.analytics.tsx(2,28): error TS2307: Cannot find module
+     './+types/instructor.analytics' or its corresponding type declarations.
+
+     app/routes/instructor.analytics.tsx(2,28): error TS2307: Cannot find module
+     './+types/instructor.analytics' or its corresponding type declarations.
+
+● The type file needs to be generated by React Router. Let me run the type generation.
+
+● Bash(npx react-router typegen 2>&1)
+  ⎿  (No output)
+
+● Bash(npx tsc --noEmit 2>&1)
+  ⎿  (No output)
+
+● All tests pass and no type errors. Let me also quickly run the full test suite to make sure nothing is
+  broken.
+
+● Bash(npx vitest run 2>&1)
+  ⎿   RUN  v3.2.4 /home/mattpocock/repos/ai/cohort-003-project
+
+      ✓ app/services/teamService.test.ts (13 tests) 47ms
+     … +18 lines (ctrl+o to expand)
+
+● All 300 tests pass, including our 12 new analytics service tests.
+
+● Phase 1 is complete. Here's what was built:
+
+  New files:
+  - app/services/analyticsService.ts — Core service with getAnalyticsSummary() that queries summary totals
+  (revenue, enrollments, avg rating) for an instructor's courses within a time period
+  - app/services/analyticsService.test.ts — 12 tests covering summary totals, instructor isolation, time
+  period filtering (7d/30d/12m/all), and edge cases (no courses, no data)
+  - app/components/analytics-dashboard.tsx — Shared presentational component with period selector tabs and
+  three summary cards (Total Revenue, Total Enrollments, Average Rating)
+  - app/routes/instructor.analytics.tsx — Instructor-only route at /instructor/analytics with auth checks,
+  period param parsing, and error boundary
+
+  Modified files:
+  - app/routes.ts — Registered the new instructor/analytics route
+  - app/components/sidebar.tsx — Added "Analytics" nav link for instructors with a BarChart3 icon
+
+  Verification:
+  - 300/300 tests passing (12 new + 288 existing)
+  - Zero type errors
+
+✻ Crunched for 4m 31s
+
+❯ Commit 
+
+● Bash(git status)
+  ⎿  On branch live-run-through
+     Your branch is up to date with 'origin/live-run-through'.
+     … +14 lines (ctrl+o to expand)
+
+● Bash(git diff)
+  ⎿  diff --git a/app/components/sidebar.tsx b/app/components/sidebar.tsx
+     index acaf1c6..c15aa2f 100644
+     --- a/app/components/sidebar.tsx
+     … +33 lines (ctrl+o to expand)
+
+● Bash(git log --oneline -5)
+  ⎿  bdc9177 Improved plan with the new skill
+     13ff737 Added prd-to-plan skill
+     0498d8c Added naive instructor analytics dashboard plan
+     … +2 lines (ctrl+o to expand)
+
+● Bash(git add app/services/analyticsService.ts app/services/analyticsService.test.ts
+      app/components/analytics-dashboard.tsx app/routes/instructor.analytics.tsx app/co…)
+  ⎿  (No output)
+
+● Bash(git commit -m "$(cat <<'EOF'
+      Added instructor analytics dashboard (Phase 1: service + route + summary cards)…)
+  ⎿  [STARTED] Backing up original state...
+     [COMPLETED] Backed up original state in git stash (ee8a2ad)
+     [STARTED] Running tasks for staged files...
+     … +29 lines (ctrl+o to expand)
+
+● Bash(git status)
+  ⎿  On branch live-run-through
+     Your branch is ahead of 'origin/live-run-through' by 1 commit.
+       (use "git push" to publish your local commits)
+     … +2 lines (ctrl+o to expand)
+
+● Committed as e4c1855. Pre-commit hooks ran successfully — Prettier, type-check, and all 300 tests passed.
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯  
+────────

@@ -1,0 +1,82 @@
+
+ ▐▛███▜▌   Claude Code v2.1.63
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/repos/ai/cohort-003-project
+
+❯ /prd-to-plan @prd/instructor-analytics-dashboard.md 
+  ⎿  Read prd/instructor-analytics-dashboard.md (117 lines)
+
+● I have the PRD in context. Let me explore the codebase to understand the current architecture before
+  drafting the plan.
+
+● Explore(Explore codebase architecture) Sonnet 4.6
+  ⎿  Done (34 tool uses · 70.8k tokens · 2m 1s)
+  (ctrl+o to expand)
+
+● I've explored the codebase thoroughly. Here's my proposed phase breakdown:
+
+  ---
+  Phase 1: Analytics Service + Instructor Route + Summary Cards
+  - User stories: 1, 2, 3, 5, 6, 11, 12, 17, 19, 20
+
+  Phase 2: Revenue Time Series Chart
+  - User stories: 4, 9, 21
+
+  Phase 3: Per-Course Breakdown Table
+  - User stories: 7, 8, 18, 22
+
+  Phase 4: Admin Access
+  - User stories: 13, 14, 15
+
+  Phase 5: Empty States & Edge Cases
+  - User stories: 10, 16
+
+  ---
+  Each phase is a vertical slice through all layers (service → route → UI → tests). Phase 1 is the tracer
+  bullet that wires up the full stack with the simplest possible data (three summary numbers). Each
+  subsequent phase extends the service and dashboard incrementally.
+
+  Does the granularity feel right, or should any phases be merged or split further?
+
+✻ Brewed for 2m 55s
+
+❯ Group together phase 2 and phase 3, and then make another grouping for phase 4 and phase 5, resulting 
+   in three phases total.                                                                               
+
+● Got it. Let me write the plan file.
+
+● Bash(mkdir -p /home/mattpocock/repos/ai/cohort-003-project/plans)
+  ⎿  Done
+
+● Write(plans/instructor-analytics-dashboard.md)
+  ⎿  Wrote 90 lines to plans/instructor-analytics-dashboard.md
+       1 # Plan: Instructor Revenue Analytics Dashboard
+       2
+       3 > Source PRD: `prd/instructor-analytics-dashboard.md`
+       4
+       5 ## Architectural decisions
+       6
+       7 Durable decisions that apply across all phases:
+       8
+       9 - **Routes**: Instructor analytics at `/instructor/analytics` (file: `instructor.analytics.t
+         sx`). Admin analytics at `/admin/instructor/:instructorId/analytics` (file: `admin.instructo
+         r.$instructorId.analytics.tsx`). Both registered in `app/routes.ts`.
+      10 - **Schema**: No changes. All data comes from existing `purchases` (`pricePaid` in cents, `c
+         reatedAt`), `enrollments` (`enrolledAt`), `courseRatings` (`rating` 1-5, `createdAt`), and `
+         courses` (`instructorId`, `price`) tables.
+     … +80 lines (ctrl+o to expand)
+
+● Plan written to plans/instructor-analytics-dashboard.md. Three phases:
+
+  1. Analytics Service + Instructor Route + Summary Cards — tracer bullet wiring up service, route, auth,
+  period filter, sidebar nav, and summary cards with tests
+  2. Revenue Chart + Per-Course Table — installs recharts, adds time series and per-course data to the
+  service, renders the chart and sortable table
+  3. Admin Access + Empty States — admin route, admin users page link, and empty state handling throughout
+
+✻ Churned for 47s
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯  
+────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  17.3%

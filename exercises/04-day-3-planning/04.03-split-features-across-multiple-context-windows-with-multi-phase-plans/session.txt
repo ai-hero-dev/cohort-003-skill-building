@@ -1,0 +1,44 @@
+
+ ▐▛███▜▌   Claude Code v2.1.63
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/repos/ai/cohort-003-project
+
+❯ /clear 
+  ⎿  (no content)
+
+❯ @prd/instructor-analytics-dashboard.md Turn this into a multi-phase plan and save it as a local       
+  Markdown file.                                                                                        
+  ⎿  Read prd/instructor-analytics-dashboard.md (117 lines)
+
+● Explore(Explore codebase structure)
+  ⎿  Done (36 tool uses · 67.6k tokens · 1m 49s)
+  (ctrl+o to expand)
+
+● Write(plans/instructor-analytics-dashboard.md)
+  ⎿  Wrote 147 lines to plans/instructor-analytics-dashboard.md                                             
+      1 # Implementation Plan: Instructor Revenue Analytics Dashboard
+      2                                                                                    
+      3 Source PRD: `prd/instructor-analytics-dashboard.md`
+      4                                                                                                     
+      5 ---                                                         
+      6                                                                                                     
+      7 ## Phase 1: Analytics Service + Tests                                                             
+      8                                                                                                     
+      9 Build the core data layer behind a simple, testable interface. No UI work yet.                      
+     … +137 lines (ctrl+o to expand)                                                                        
+                                                                                                            
+● Plan saved to plans/instructor-analytics-dashboard.md with 4 phases:
+                                                                                           
+  1. Analytics Service + Tests — core data layer with comprehensive test coverage
+  2. Shared Dashboard Component + Recharts — presentational UI (period tabs, summary cards, line chart,     
+  sortable table)
+  3. Instructor Analytics Route — /instructor/analytics with auth + sidebar nav link                        
+  4. Admin Analytics Route + Users Page Link — /admin/instructor/:id/analytics with "View Analytics" on the
+  admin users page
+
+  Each phase has concrete steps and acceptance criteria. The phases are ordered so each builds on the
+  previous — service first, then UI, then wiring.
+
+✻ Brewed for 2m 6s                       
+                                                                                           
+─────────

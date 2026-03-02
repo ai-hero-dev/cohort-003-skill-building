@@ -1,0 +1,749 @@
+ ▐▛███▜▌   Claude Code v2.1.63
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/repos/ai/cohort-003-project
+
+❯ /clear 
+  ⎿  (no content)
+
+❯ @prd/instructor-analytics-dashboard.md @plans/instructor-analytics-dashboard.md Do phase 3                
+  ⎿  Read prd/instructor-analytics-dashboard.md (117 lines)                                  
+  ⎿  Read plans/instructor-analytics-dashboard.md (91 lines)                                                
+                                                                                                          
+● I'll start by exploring the existing code to understand the current state and patterns before implementing
+   Phase 3.
+                                                                                                            
+● Explore(Explore existing analytics code)                                                                
+  ⎿  Done (25 tool uses · 55.0k tokens · 35s)                                                               
+  (ctrl+o to expand)                                                                                        
+                                                                                                         
+● Now let me read the specific files I need to modify.                                                      
+                                
+● Read 4 files (ctrl+o to expand)                                                                           
+                                                                                                            
+● Good, I have a clear picture. Let me now check the analytics service types quickly and then implement     
+  everything.                                                                                               
+                                                                                                            
+● Read 1 file (ctrl+o to expand)                                                                            
+                                                                                                            
+● Now let me create the admin analytics route. I'll model it closely on the instructor route but with admin 
+  auth and reading instructor ID from URL params.     
+                                                                                                            
+● Write(app/routes/admin.instructor.$instructorId.analytics.tsx)                                            
+  ⎿  Wrote 152 lines to app/routes/admin.instructor.$instructorId.analytics.tsx                             
+       1 import { Link, data, isRouteErrorResponse } from "react-router";                                   
+       2 import type { Route } from "./+types/admin.instructor.$instructorId.analytics";                    
+       3 import { getCurrentUserId } from "~/lib/session";                                                  
+       4 import { getUserById } from "~/services/userService";                                              
+       5 import { UserRole } from "~/db/schema";                                                            
+       6 import {                                                                                           
+       7   getAnalyticsSummary,                                                                             
+       8   getRevenueTimeSeries,                                                                            
+       9   getPerCourseBreakdown,
+      10   type TimePeriod,              
+     … +142 lines (ctrl+o to expand)
+
+● Update(app/routes.ts)                                                       
+  ⎿  Added 4 lines                 
+      41      route("admin/users", "routes/admin.users.tsx"),
+      42      route("admin/courses", "routes/admin.courses.tsx"),
+      43      route("admin/categories", "routes/admin.categories.tsx"),
+      44 +    route(                                                                                 
+      45 +      "admin/instructor/:instructorId/analytics",                                          
+      46 +      "routes/admin.instructor.$instructorId.analytics.tsx"                                       
+      47 +    ),                                                                                     
+      48      route("settings", "routes/settings.tsx"),                                                     
+      49      route("team", "routes/team.tsx"),
+      50      route("redeem/:code", "routes/redeem.$code.tsx"),
+
+● Now add the "View Analytics" link to the admin users page. I need to add it in the actions column for
+  instructor users.                
+                                                  
+● Update(app/routes/admin.users.tsx)                                   
+  ⎿  Added 2 lines, removed 1 line           
+      22    SelectTrigger,                        
+      23    SelectValue,                            
+      24  } from "~/components/ui/select";                                                                  
+      25 -import { AlertTriangle, Pencil, Shield, Users } from "lucide-react";                       
+      25 +import { AlertTriangle, BarChart3, Pencil, Shield, Users } from "lucide-react";                   
+      26  import { data, isRouteErrorResponse, Link } from "react-router";                                  
+      27 +import { UserRole } from "~/db/schema";                                                    
+      28                                                                                                    
+      29  const adminUserActionSchema = v.variant("intent", [
+      30    v.object({                   
+
+● Wait, UserRole is already imported at line 14. Let me revert that duplicate import.
+                                   
+● Update(app/routes/admin.users.tsx)                                   
+  ⎿  Removed 1 line                                 
+      24  } from "~/components/ui/select";                             
+      25  import { AlertTriangle, BarChart3, Pencil, Shield, Users } from "lucide-react";
+      26  import { data, isRouteErrorResponse, Link } from "react-router";
+      27 -import { UserRole } from "~/db/schema";                                                           
+      27                                     
+      28  const adminUserActionSchema = v.variant("intent", [                                               
+      29    v.object({
+                                                                                                            
+● Now add the "View Analytics" link in the actions column for instructor users. I'll add it next to the edit
+   button.                                                                                                  
+                                                  
+● Update(app/routes/admin.users.tsx)                                  
+  ⎿  Added 22 lines, removed 8 lines         
+      298              </Button>                  
+      299            </div>                         
+      300          ) : (                                                                                    
+      301 -          <Button                                                                         
+      302 -            variant="ghost"                                                                      
+      303 -            size="sm"                                                                            
+      304 -            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"           
+      305 -            onClick={() => setIsEditing(true)}                                                   
+      306 -          >                                                                               
+      307 -            <Pencil className="size-3.5" />                                               
+      308 -          </Button>                                                                       
+      301 +          <div className="flex items-center gap-1">                                       
+      302 +            <Button                                                                       
+      303 +              variant="ghost"                                                             
+      304 +              size="sm"                                                                   
+      305 +              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"         
+      306 +              onClick={() => setIsEditing(true)}                                          
+      307 +            >                                                                             
+      308 +              <Pencil className="size-3.5" />                                             
+      309 +            </Button>                                                                     
+      310 +            {user.role === UserRole.Instructor && (                                       
+      311 +              <Link to={`/admin/instructor/${user.id}/analytics`}>                        
+      312 +                <Button                                                                   
+      313 +                  variant="ghost"                                                         
+      314 +                  size="sm"                                                               
+      315 +                  className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreg
+          +round"                                                                                    
+      316 +                >                                                                         
+      317 +                  <BarChart3 className="size-3.5" />                                      
+      318 +                  View Analytics                                                          
+      319 +                </Button>                                                                 
+      320 +              </Link>                                                                     
+      321 +            )}                                                                            
+      322 +          </div>                                                                          
+      323          )}
+      324        </td>
+      325      </tr>
+
+● Now add empty states to the AnalyticsDashboard. The component already handles empty time series and empty
+  course breakdown individually. I need to add an overall empty state for when the instructor has no courses
+   at all, and improve the existing empty states to be more friendly.
+                                                    
+  Looking at the component, when there are no courses, courseBreakdown will be empty and all summary numbers
+   will be zero. I'll add a prop to distinguish "no courses at all" from "no data for this period", and add
+  a top-level empty state.                   
+                                                                                                            
+  Actually, let me think about this differently. The simplest approach: if courseBreakdown is empty and all
+  summary values are zero/null, that's effectively an empty state. But we need to distinguish between "no   
+  courses" and "no data for this period." The cleanest way is to pass a flag or let the dashboard detect it.
+   Let me add an optional hasCourses prop.                                                                  
+       
+● Searched for 1 pattern, read 1 file (ctrl+o to expand)        
+                                     
+● Let me check if there's a simple way to get course count for an instructor. I'll check if
+  getPerCourseBreakdown returns all courses even with zero data, or only courses with data.
+                                                  
+● Searched for 1 pattern, read 1 file (ctrl+o to expand)        
+                                                    
+● Good — getPerCourseBreakdown returns all instructor courses even with zero data. So courseBreakdown.length
+   === 0 truly means no courses. I'll add a top-level empty state for that case.
+                                                                                                            
+● Update(app/components/analytics-dashboard.tsx)                                                            
+  ⎿  Added 1 line                                                                                           
+      18    ArrowUp,                                                                                        
+      19    ArrowDown,                                                                                      
+      20    ArrowUpDown,                                                                                    
+      21 +  PackageOpen,                                                                                    
+      22  } from "lucide-react";                                                                            
+      23  import type {                                                                                     
+      24    TimePeriod,                                                                                     
+                                                                                                            
+● Now add the empty state at the top of the component render, after the period selector but before the rest
+  of the dashboard.                      
+                                                  
+● Update(app/components/analytics-dashboard.tsx)                 
+  ⎿  Added 15 lines                          
+      141          ))}                                           
+      142        </div>                             
+      143                                                                                                   
+      144 +      {/* Empty state: no courses */}                                                     
+      145 +      {courseBreakdown.length === 0 && (                                                         
+      146 +        <Card>                                                                                   
+      147 +          <CardContent className="py-12 text-center">                                     
+      148 +            <PackageOpen className="mx-auto mb-3 size-10 text-muted-foreground/50" />            
+      149 +            <h3 className="mb-1 text-lg font-semibold">No analytics data yet</h3>         
+      150 +            <p className="text-sm text-muted-foreground">                                        
+      151 +              Publish a course to start tracking revenue, enrollments, and                
+      152 +              ratings.                                                                    
+      153 +            </p>                                                                          
+      154 +          </CardContent>                                                                  
+      155 +        </Card>                                                                           
+      156 +      )}                                                                                  
+      157 +                                                                                          
+      158        {/* Summary Cards */}
+      159 +      {courseBreakdown.length > 0 && (                                                    
+      160        <div className="grid gap-4 sm:grid-cols-3">
+      161          <Card>
+      162            <CardHeader className="flex flex-row items-center justify-between pb-2">
+
+● Now I need to close the conditional wrapper around the summary cards, chart, and table. Let me read the
+  current state of the file.       
+                                                  
+● Read 1 file (ctrl+o to expand)                                 
+                                             
+● I need to wrap the summary cards, chart, and table sections in a conditional. The approach with wrapping
+  fragments won't work well in JSX with the current structure. Let me take a cleaner approach — wrap
+  everything after the period selector in a single conditional block.                                       
+                                                    
+● Update(app/components/analytics-dashboard.tsx)                                                            
+  ⎿  Added 218 lines, removed 216 lines                                                                     
+      155          </Card>                        
+      156        )}                                                                                         
+      157                                                                                                   
+      158 -      {/* Summary Cards */}                                                                      
+      158        {courseBreakdown.length > 0 && (                                                           
+      160 -      <div className="grid gap-4 sm:grid-cols-3">                                                
+      161 -        <Card>                                                                            
+      162 -          <CardHeader className="flex flex-row items-center justify-between pb-2">               
+      163 -            <CardTitle className="text-sm font-medium text-muted-foreground">             
+      164 -              Total Revenue                                                               
+      165 -            </CardTitle>                                                                  
+      166 -            <DollarSign className="size-4 text-muted-foreground" />                       
+      167 -          </CardHeader>                                                                   
+      168 -          <CardContent>                                                                   
+      169 -            <div className="text-2xl font-bold">                                          
+      170 -              {formatPrice(summary.totalRevenue)}                                         
+      171 -            </div>                                                                        
+      172 -          </CardContent>                                                                  
+      173 -        </Card>                                                                           
+      159 +        <>                                                                                
+      160 +          {/* Summary Cards */}                                                           
+      161 +          <div className="grid gap-4 sm:grid-cols-3">                                     
+      162 +            <Card>                                                                        
+      163 +              <CardHeader className="flex flex-row items-center justify-between pb-2">    
+      164 +                <CardTitle className="text-sm font-medium text-muted-foreground">         
+      165 +                  Total Revenue                                                           
+      166 +                </CardTitle>                                                              
+      167 +                <DollarSign className="size-4 text-muted-foreground" />                   
+      168 +              </CardHeader>                                                               
+      169 +              <CardContent>                                                               
+      170 +                <div className="text-2xl font-bold">                                      
+      171 +                  {formatPrice(summary.totalRevenue)}                                     
+      172 +                </div>                                                                    
+      173 +              </CardContent>                                                              
+      174 +            </Card>                                                                       
+      175  
+      175 -        <Card>                                                                            
+      176 -          <CardHeader className="flex flex-row items-center justify-between pb-2">        
+      177 -            <CardTitle className="text-sm font-medium text-muted-foreground">             
+      178 -              Total Enrollments                                                           
+      179 -            </CardTitle>                                                                  
+      180 -            <Users className="size-4 text-muted-foreground" />                            
+      181 -          </CardHeader>                                                                   
+      182 -          <CardContent>                                                                   
+      183 -            <div className="text-2xl font-bold">                                          
+      184 -              {summary.totalEnrollments.toLocaleString()}                                 
+      185 -            </div>                                                                        
+      186 -          </CardContent>                                                                  
+      187 -        </Card>                                                                           
+      176 +            <Card>                                                                        
+      177 +              <CardHeader className="flex flex-row items-center justify-between pb-2">    
+      178 +                <CardTitle className="text-sm font-medium text-muted-foreground">         
+      179 +                  Total Enrollments                                                       
+      180 +                </CardTitle>                                                              
+      181 +                <Users className="size-4 text-muted-foreground" />                        
+      182 +              </CardHeader>                                                               
+      183 +              <CardContent>                                                               
+      184 +                <div className="text-2xl font-bold">                                      
+      185 +                  {summary.totalEnrollments.toLocaleString()}                             
+      186 +                </div>                                                                    
+      187 +              </CardContent>                                                              
+      188 +            </Card>                                                                       
+      189  
+      189 -        <Card>                                                                            
+      190 -          <CardHeader className="flex flex-row items-center justify-between pb-2">        
+      191 -            <CardTitle className="text-sm font-medium text-muted-foreground">             
+      192 -              Average Rating                                                              
+      193 -            </CardTitle>                                                                  
+      194 -            <Star className="size-4 text-muted-foreground" />                             
+      195 -          </CardHeader>                                                                   
+      196 -          <CardContent>                                                                   
+      197 -            <div className="text-2xl font-bold">                                          
+      198 -              {summary.averageRating !== null                                             
+      199 -                ? `${summary.averageRating.toFixed(1)} / 5`                               
+      200 -                : "N/A"}                                                                  
+      201 -            </div>                                                                        
+      202 -            {summary.ratingCount > 0 && (                                                 
+      203 -              <p className="text-xs text-muted-foreground">                               
+      204 -                from {summary.ratingCount}{" "}                                           
+      205 -                {summary.ratingCount === 1 ? "rating" : "ratings"}                        
+      206 -              </p>                                                                        
+      207 -            )}                                                                            
+      208 -          </CardContent>                                                                  
+      209 -        </Card>                                                                           
+      210 -      </div>                                                                              
+      190 +            <Card>                                                                        
+      191 +              <CardHeader className="flex flex-row items-center justify-between pb-2">    
+      192 +                <CardTitle className="text-sm font-medium text-muted-foreground">         
+      193 +                  Average Rating                                                          
+      194 +                </CardTitle>                                                              
+      195 +                <Star className="size-4 text-muted-foreground" />                         
+      196 +              </CardHeader>                                                               
+      197 +              <CardContent>                                                               
+      198 +                <div className="text-2xl font-bold">                                      
+      199 +                  {summary.averageRating !== null                                         
+      200 +                    ? `${summary.averageRating.toFixed(1)} / 5`                           
+      201 +                    : "N/A"}                                                              
+      202 +                </div>                                                                    
+      203 +                {summary.ratingCount > 0 && (                                             
+      204 +                  <p className="text-xs text-muted-foreground">                           
+      205 +                    from {summary.ratingCount}{" "}                                       
+      206 +                    {summary.ratingCount === 1 ? "rating" : "ratings"}                    
+      207 +                  </p>                                                                    
+      208 +                )}                                                                        
+      209 +              </CardContent>                                                              
+      210 +            </Card>                                                                       
+      211 +          </div>                                                                          
+      212  
+      212 -      {/* Revenue Chart */}                                                               
+      213 -      <Card>                                                                              
+      214 -        <CardHeader>                                                                      
+      215 -          <CardTitle>Revenue Over Time</CardTitle>                                        
+      216 -        </CardHeader>                                                                     
+      217 -        <CardContent>                                                                     
+      218 -          {timeSeries.length > 0 ? (                                                      
+      219 -            <ResponsiveContainer width="100%" height={300}>                               
+      220 -              <LineChart data={timeSeries}>                                               
+      221 -                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />            
+      222 -                <XAxis                                                                    
+      223 -                  dataKey="date"                                                          
+      224 -                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}                
+      225 -                  tickLine={false}                                                        
+      226 -                  axisLine={false}                                                        
+      227 -                />                                                                        
+      228 -                <YAxis                                                                    
+      229 -                  tickFormatter={formatChartRevenue}                                      
+      230 -                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}                
+      231 -                  tickLine={false}                                                        
+      232 -                  axisLine={false}                                                        
+      233 -                  width={60}                                                              
+      234 -                />                                                                        
+      235 -                <Tooltip                                                                  
+      236 -                  formatter={(value) => [                                                 
+      237 -                    formatTooltipRevenue(value as number),                                
+      238 -                    "Revenue",                                                            
+      239 -                  ]}                                                                      
+      240 -                  labelFormatter={(label) => `Date: ${label}`}                            
+      241 -                  contentStyle={{                                                         
+      242 -                    backgroundColor: "var(--card)",                                       
+      243 -                    border: "1px solid var(--border)",                                    
+      244 -                    borderRadius: "var(--radius)",                                        
+      245 -                  }}                                                                      
+      246 -                />                                                                        
+      247 -                <Line                                                                     
+      248 -                  type="monotone"                                                         
+      249 -                  dataKey="revenue"                                                       
+      250 -                  stroke="var(--primary)"                                                 
+      251 -                  strokeWidth={2}                                                         
+      252 -                  dot={false}                                                             
+      253 -                  activeDot={{ r: 4 }}                                                    
+      254 -                />                                                                        
+      255 -              </LineChart>                                                                
+      256 -            </ResponsiveContainer>                                                        
+      257 -          ) : (                                                                           
+      258 -            <div className="flex h-[300px] items-center justify-center text-muted-foregrou
+          -nd">                                                                                      
+      259 -              No revenue data for this period.                                            
+      260 -            </div>                                                                        
+      261 -          )}                                                                              
+      262 -        </CardContent>                                                                    
+      263 -      </Card>                                                                             
+      213 +          {/* Revenue Chart */}                                                           
+      214 +          <Card>                                                                          
+      215 +            <CardHeader>                                                                  
+      216 +              <CardTitle>Revenue Over Time</CardTitle>                                    
+      217 +            </CardHeader>                                                                 
+      218 +            <CardContent>                                                                 
+      219 +              {timeSeries.length > 0 ? (                                                  
+      220 +                <ResponsiveContainer width="100%" height={300}>                           
+      221 +                  <LineChart data={timeSeries}>                                           
+      222 +                    <CartesianGrid                                                        
+      223 +                      strokeDasharray="3 3"                                               
+      224 +                      stroke="var(--border)"                                              
+      225 +                    />                                                                    
+      226 +                    <XAxis                                                                
+      227 +                      dataKey="date"                                                      
+      228 +                      tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}            
+      229 +                      tickLine={false}                                                    
+      230 +                      axisLine={false}                                                    
+      231 +                    />                                                                    
+      232 +                    <YAxis                                                                
+      233 +                      tickFormatter={formatChartRevenue}                                  
+      234 +                      tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}            
+      235 +                      tickLine={false}                                                    
+      236 +                      axisLine={false}                                                    
+      237 +                      width={60}                                                          
+      238 +                    />                                                                    
+      239 +                    <Tooltip                                                              
+      240 +                      formatter={(value) => [                                             
+      241 +                        formatTooltipRevenue(value as number),                            
+      242 +                        "Revenue",                                                        
+      243 +                      ]}                                                                  
+      244 +                      labelFormatter={(label) => `Date: ${label}`}                        
+      245 +                      contentStyle={{                                                     
+      246 +                        backgroundColor: "var(--card)",                                   
+      247 +                        border: "1px solid var(--border)",                                
+      248 +                        borderRadius: "var(--radius)",                                    
+      249 +                      }}                                                                  
+      250 +                    />                                                                    
+      251 +                    <Line                                                                 
+      252 +                      type="monotone"                                                     
+      253 +                      dataKey="revenue"                                                   
+      254 +                      stroke="var(--primary)"                                             
+      255 +                      strokeWidth={2}                                                     
+      256 +                      dot={false}                                                         
+      257 +                      activeDot={{ r: 4 }}                                                
+      258 +                    />                                                                    
+      259 +                  </LineChart>                                                            
+      260 +                </ResponsiveContainer>                                                    
+      261 +              ) : (                                                                       
+      262 +                <div className="flex h-[300px] items-center justify-center text-muted-fore
+          +ground">                                                                                  
+      263 +                  No revenue data for this period.                                        
+      264 +                </div>                                                                    
+      265 +              )}                                                                          
+      266 +            </CardContent>                                                                
+      267 +          </Card>                                                                         
+      268  
+      265 -      {/* Per-Course Table */}                                                            
+      266 -      <Card>                                                                              
+      267 -        <CardHeader>                                                                      
+      268 -          <CardTitle>Per-Course Breakdown</CardTitle>                                     
+      269 -        </CardHeader>                                                                     
+      270 -        <CardContent>                                                                     
+      271 -          {courseBreakdown.length > 0 ? (                                                 
+      272 -            <div className="overflow-x-auto">                                             
+      273 -              <table className="w-full text-sm">                                          
+      274 -                <thead>                                                                   
+      275 -                  <tr className="border-b text-left">                                     
+      276 -                    <th className="pb-3 pr-4 font-medium">                                
+      277 -                      <button                                                             
+      278 -                        onClick={() => handleSort("title")}                               
+      279 -                        className="inline-flex items-center hover:text-foreground"        
+      280 -                      >                                                                   
+      281 -                        Course                                                            
+      282 -                        <SortIcon field="title" />                                        
+      283 -                      </button>                                                           
+      284 -                    </th>                                                                 
+      285 -                    <th className="pb-3 pr-4 text-right font-medium">                     
+      286 -                      <button                                                             
+      287 -                        onClick={() => handleSort("listPrice")}                           
+      288 -                        className="inline-flex items-center hover:text-foreground"        
+      289 -                      >                                                                   
+      290 -                        List Price                                                        
+      291 -                        <SortIcon field="listPrice" />                                    
+      292 -                      </button>                                                           
+      293 -                    </th>                                                                 
+      294 -                    <th className="pb-3 pr-4 text-right font-medium">                     
+      295 -                      <button                                                             
+      296 -                        onClick={() => handleSort("revenue")}                             
+      297 -                        className="inline-flex items-center hover:text-foreground"        
+      298 -                      >                                                                   
+      299 -                        Revenue                                                           
+      300 -                        <SortIcon field="revenue" />                                      
+      301 -                      </button>                                                           
+      302 -                    </th>                                                                 
+      303 -                    <th className="pb-3 pr-4 text-right font-medium">                     
+      304 -                      <button                                                             
+      305 -                        onClick={() => handleSort("salesCount")}                          
+      306 -                        className="inline-flex items-center hover:text-foreground"        
+      307 -                      >                                                                   
+      308 -                        Sales                                                             
+      309 -                        <SortIcon field="salesCount" />                                   
+      310 -                      </button>                                                           
+      311 -                    </th>                                                                 
+      312 -                    <th className="pb-3 pr-4 text-right font-medium">                     
+      313 -                      <button                                                             
+      314 -                        onClick={() => handleSort("enrollmentCount")}                     
+      315 -                        className="inline-flex items-center hover:text-foreground"        
+      316 -                      >                                                                   
+      317 -                        Enrollments                                                       
+      318 -                        <SortIcon field="enrollmentCount" />                              
+      319 -                      </button>                                                           
+      320 -                    </th>                                                                 
+      321 -                    <th className="pb-3 pr-4 text-right font-medium">                     
+      322 -                      <button                                                             
+      323 -                        onClick={() => handleSort("averageRating")}                       
+      324 -                        className="inline-flex items-center hover:text-foreground"        
+      325 -                      >                                                                   
+      326 -                        Avg Rating                                                        
+      327 -                        <SortIcon field="averageRating" />                                
+      328 -                      </button>                                                           
+      329 -                    </th>                                                                 
+      330 -                    <th className="pb-3 text-right font-medium">                          
+      331 -                      <button                                                             
+      332 -                        onClick={() => handleSort("ratingCount")}                         
+      333 -                        className="inline-flex items-center hover:text-foreground"        
+      334 -                      >                                                                   
+      335 -                        Ratings                                                           
+      336 -                        <SortIcon field="ratingCount" />                                  
+      337 -                      </button>                                                           
+      338 -                    </th>                                                                 
+      339 -                  </tr>                                                                   
+      340 -                </thead>                                                                  
+      341 -                <tbody>                                                                   
+      342 -                  {sortedCourses.map((course) => (                                        
+      343 -                    <tr                                                                   
+      344 -                      key={course.courseId}                                               
+      345 -                      className="border-b last:border-0"                                  
+      346 -                    >                                                                     
+      347 -                      <td className="py-3 pr-4 font-medium">{course.title}</td>           
+      348 -                      <td className="py-3 pr-4 text-right">                               
+      349 -                        {formatPrice(course.listPrice)}                                   
+      350 -                      </td>                                                               
+      351 -                      <td className="py-3 pr-4 text-right">                               
+      352 -                        {formatPrice(course.revenue)}                                     
+      353 -                      </td>                                                               
+      354 -                      <td className="py-3 pr-4 text-right">                               
+      355 -                        {course.salesCount.toLocaleString()}                              
+      356 -                      </td>                                                               
+      357 -                      <td className="py-3 pr-4 text-right">                               
+      358 -                        {course.enrollmentCount.toLocaleString()}                         
+      359 -                      </td>                                                               
+      360 -                      <td className="py-3 pr-4 text-right">                               
+      361 -                        {course.averageRating !== null                                    
+      362 -                          ? course.averageRating.toFixed(1)                               
+      363 -                          : "N/A"}                                                        
+      364 -                      </td>                                                               
+      365 -                      <td className="py-3 text-right">                                    
+      366 -                        {course.ratingCount.toLocaleString()}                             
+      367 -                      </td>                                                               
+      269 +          {/* Per-Course Table */}                                                        
+      270 +          <Card>                                                                          
+      271 +            <CardHeader>                                                                  
+      272 +              <CardTitle>Per-Course Breakdown</CardTitle>                                 
+      273 +            </CardHeader>                                                                 
+      274 +            <CardContent>                                                                 
+      275 +              <div className="overflow-x-auto">                                           
+      276 +                <table className="w-full text-sm">                                        
+      277 +                  <thead>                                                                 
+      278 +                    <tr className="border-b text-left">                                   
+      279 +                      <th className="pb-3 pr-4 font-medium">                              
+      280 +                        <button                                                           
+      281 +                          onClick={() => handleSort("title")}                             
+      282 +                          className="inline-flex items-center hover:text-foreground"      
+      283 +                        >                                                                 
+      284 +                          Course                                                          
+      285 +                          <SortIcon field="title" />                                      
+      286 +                        </button>                                                         
+      287 +                      </th>                                                               
+      288 +                      <th className="pb-3 pr-4 text-right font-medium">                   
+      289 +                        <button                                                           
+      290 +                          onClick={() => handleSort("listPrice")}                         
+      291 +                          className="inline-flex items-center hover:text-foreground"      
+      292 +                        >                                                                 
+      293 +                          List Price                                                      
+      294 +                          <SortIcon field="listPrice" />                                  
+      295 +                        </button>                                                         
+      296 +                      </th>                                                               
+      297 +                      <th className="pb-3 pr-4 text-right font-medium">                   
+      298 +                        <button                                                           
+      299 +                          onClick={() => handleSort("revenue")}                           
+      300 +                          className="inline-flex items-center hover:text-foreground"      
+      301 +                        >                                                                 
+      302 +                          Revenue                                                         
+      303 +                          <SortIcon field="revenue" />                                    
+      304 +                        </button>                                                         
+      305 +                      </th>                                                               
+      306 +                      <th className="pb-3 pr-4 text-right font-medium">                   
+      307 +                        <button                                                           
+      308 +                          onClick={() => handleSort("salesCount")}                        
+      309 +                          className="inline-flex items-center hover:text-foreground"      
+      310 +                        >                                                                 
+      311 +                          Sales                                                           
+      312 +                          <SortIcon field="salesCount" />                                 
+      313 +                        </button>                                                         
+      314 +                      </th>                                                               
+      315 +                      <th className="pb-3 pr-4 text-right font-medium">                   
+      316 +                        <button                                                           
+      317 +                          onClick={() => handleSort("enrollmentCount")}                   
+      318 +                          className="inline-flex items-center hover:text-foreground"      
+      319 +                        >                                                                 
+      320 +                          Enrollments                                                     
+      321 +                          <SortIcon field="enrollmentCount" />                            
+      322 +                        </button>                                                         
+      323 +                      </th>                                                               
+      324 +                      <th className="pb-3 pr-4 text-right font-medium">                   
+      325 +                        <button                                                           
+      326 +                          onClick={() => handleSort("averageRating")}                     
+      327 +                          className="inline-flex items-center hover:text-foreground"      
+      328 +                        >                                                                 
+      329 +                          Avg Rating                                                      
+      330 +                          <SortIcon field="averageRating" />                              
+      331 +                        </button>                                                         
+      332 +                      </th>                                                               
+      333 +                      <th className="pb-3 text-right font-medium">                        
+      334 +                        <button                                                           
+      335 +                          onClick={() => handleSort("ratingCount")}                       
+      336 +                          className="inline-flex items-center hover:text-foreground"      
+      337 +                        >                                                                 
+      338 +                          Ratings                                                         
+      339 +                          <SortIcon field="ratingCount" />                                
+      340 +                        </button>                                                         
+      341 +                      </th>                                                               
+      342                      </tr>
+      369 -                  ))}                                                                     
+      370 -                </tbody>                                                                  
+      371 -              </table>                                                                    
+      372 -            </div>                                                                        
+      373 -          ) : (                                                                           
+      374 -            <div className="py-8 text-center text-muted-foreground">                      
+      375 -              No courses to display.                                                      
+      376 -            </div>                                                                        
+      377 -          )}                                                                              
+      378 -        </CardContent>                                                                    
+      379 -      </Card>                                                                             
+      343 +                  </thead>                                                                
+      344 +                  <tbody>                                                                 
+      345 +                    {sortedCourses.map((course) => (                                      
+      346 +                      <tr                                                                 
+      347 +                        key={course.courseId}                                             
+      348 +                        className="border-b last:border-0"                                
+      349 +                      >                                                                   
+      350 +                        <td className="py-3 pr-4 font-medium">                            
+      351 +                          {course.title}                                                  
+      352 +                        </td>                                                             
+      353 +                        <td className="py-3 pr-4 text-right">                             
+      354 +                          {formatPrice(course.listPrice)}                                 
+      355 +                        </td>                                                             
+      356 +                        <td className="py-3 pr-4 text-right">                             
+      357 +                          {formatPrice(course.revenue)}                                   
+      358 +                        </td>                                                             
+      359 +                        <td className="py-3 pr-4 text-right">                             
+      360 +                          {course.salesCount.toLocaleString()}                            
+      361 +                        </td>                                                             
+      362 +                        <td className="py-3 pr-4 text-right">                             
+      363 +                          {course.enrollmentCount.toLocaleString()}                       
+      364 +                        </td>                                                             
+      365 +                        <td className="py-3 pr-4 text-right">                             
+      366 +                          {course.averageRating !== null                                  
+      367 +                            ? course.averageRating.toFixed(1)                             
+      368 +                            : "N/A"}                                                      
+      369 +                        </td>                                                             
+      370 +                        <td className="py-3 text-right">                                  
+      371 +                          {course.ratingCount.toLocaleString()}                           
+      372 +                        </td>                                                             
+      373 +                      </tr>                                                               
+      374 +                    ))}                                                                   
+      375 +                  </tbody>                                                                
+      376 +                </table>                                                                  
+      377 +              </div>                                                                      
+      378 +            </CardContent>                                                                
+      379 +          </Card>                                                                         
+      380 +        </>                                                                               
+      381 +      )}                                                                                  
+      382      </div>
+      383    );
+      384  }
+
+● Now let me typecheck to verify everything compiles correctly.        
+                                   
+● Bash(npx tsc --noEmit 2>&1 | head -50)                               
+  ⎿  (No output)                                    
+  ⎿  (timeout 1m)                                 
+                                                                       
+● No type errors. Let me also run the analytics service tests to make sure nothing is broken.
+                                                                                                            
+● Bash(npx vitest run app/services/analyticsService.test.ts 2>&1 | tail -20)
+  ⎿   RUN  v3.2.4 /home/mattpocock/repos/ai/cohort-003-project                                              
+                                                  
+      ✓ app/services/analyticsService.test.ts (29 tests) 79ms                                               
+     … +6 lines (ctrl+o to expand)                                                                          
+                                                                                                            
+● All 29 tests pass. Let me verify the final state of all modified files.                                   
+                                                                                                            
+● Bash(git diff --stat)                                                
+  ⎿   app/components/analytics-dashboard.tsx | 444 +++++++++++++++++----------------                        
+      app/routes.ts                          |   4 +                                                        
+      app/routes/admin.users.tsx             |  32 ++-                 
+      3 files changed, 258 insertions(+), 222 deletions(-)                                                  
+                                                                                                            
+● Bash(git diff --stat HEAD -- . ':!app/components/analytics-dashboard.tsx' ':!app/routes.ts'
+      ':!app/routes/admin.users.tsx' && echo "---" && git status --short)                                   
+  ⎿  Running…                                     
+●    Wait                                                                                                   
+· Verifying implementation… (4m 1s · ↓ 12.6k tokens)                                                        
+  Ver app/components/analytics-dashboard.tsx | 444 +++++++++++++++++----------------
+     ✔app/routes.tsin analytics route in rout|s.t4 +                                                        
+      app/routes/admin.users.tsx      m      |  32 ++-                                                      
+     … +6 lines (ctrl+o to expand) sDashboard
+                                                                                                            
+● All done. Here's a summary of what was implemented for Phase 3: Admin Access + Empty States:
+── ─                                         ───────────────────────────────────────────────────────────────
+  New file:                                                                                                 
+  -─app/routes/admin.instructor.$instructorId.analytics.tsx─—─Admin─route─at────────────────────────────────
+  /admin/instructor/:instructorId/analytics that enforces UserRole.Admin, validates the instructor ID,      
+  fetches analytics data via the shared service, and renders the same AnalyticsDashboard component. Includes
+   breadcrumbs linking back to admin users page, the instructor's name in the heading, and a full           
+  ErrorBoundary handling 401/403/404.                                                                       
+                                                                                                            
+  Modified files:                                                                                           
+  - app/routes.ts — Registered the new admin analytics route.                                               
+  - app/routes/admin.users.tsx — Added a "View Analytics" button (with BarChart3 icon) next to the edit     
+  pencil for users with UserRole.Instructor, linking to /admin/instructor/:id/analytics.
+  - app/components/analytics-dashboard.tsx — Added empty state: when courseBreakdown is empty (instructor   
+  has no courses), shows a friendly card with "No analytics data yet. Publish a course to start tracking    
+  revenue, enrollments, and ratings." instead of the summary cards/chart/table. When courses exist, the
+  chart and table retain their existing per-section empty messages.
+
+  Verification: TypeScript compiles clean, all 29 analytics service tests pass.
+
+✻ Cogitated for 4m 15s                
+
+❯ Commit the code                                                                                           
+                                                                                                        
+● Bash(git status)                                                                                          
+  ⎿  On branch live-run-through                                                                             
+     Your branch is ahead of 'origin/live-run-through' by 2 commits.                                        
+       (use "git push" to publish your local commits)                                                       
+     … +13 lines (ctrl+o to expand)                                                                         
+                                                                                                            
+● Bash(git diff)                                                                                            
+  ⎿  diff --git a/app/components/analytics-dashboard.tsx b/app/components/analytics-dashboard.tsx           
+     index 229052f..6d4f6ad 100644                                                                          
+     --- a/app/components/analytics-dashboard.tsx
+     … +221 lines (ctrl+o to expand)                                                                        
+                                                                                                            
+● Bash(git log --oneline -5)             
+  ⎿  27f93a8 Added revenue chart and per-course table (Phase 2: analytics dashboard)                        
+     e4c1855 Added instructor analytics dashboard (Phase 1: service + route + summary cards)                
+     bdc9177 Improved plan with the new skill
+     … +2 lines (ctrl+o to expand)                                                                          
+                                                                                                            
+● Bash(git add app/routes/admin.instructor.\$instructorId.analytics.tsx
+      app/components/analytics-dashboard.tsx app/routes.ts app/routes/admin.users.tsx)                      
+  ⎿  (No output)                                                                                            
+                                         
+● Bash(git commit -m "$(cat <<'EOF'                                                                         
+      Added admin analytics access and empty states (Phase 3: analytics dashboard)…)
+  ⎿  [STARTED] Backing up original state...                                                                 
+     [COMPLETED] Backed up original state in git stash (806ad52)
+     [STARTED] Running tasks for staged files...                                                            
+     … +29 lines (ctrl+o to expand)
+                                                                                                            
+● Bash(git status)                                                                                          
+  ⎿  On branch live-run-through                                                                             
+     Your branch is ahead of 'origin/live-run-through' by 3 commits.                                        
+       (use "git push" to publish your local commits)                                                       
+     … +2 lines (ctrl+o to expand)                                                                          
+                                                                                                            
+● Committed as 44fdbd9. All 317 tests pass, typecheck clean, prettier formatted.                            
+                                                                                                            
+✻ Sautéed for 33s                                                                                           
+                                         
+────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯      
+────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  35.2%
+  ⏵⏵ accept edits on (shift+tab to cycle)

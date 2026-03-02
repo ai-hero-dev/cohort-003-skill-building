@@ -1,0 +1,1022 @@
+      414 +          courseId: base.course.id,                                                       
+      415 +          pricePaid: 4999,                                                                
+      416 +          country: "US",                                                                  
+      417 +          createdAt: threeDaysAgo.toISOString(),                                          
+      418 +        })                                                                                
+      419 +        .run();                                                                           
+      420 +                                                                                          
+      421 +      const result = getRevenueTimeSeries({                                               
+      422 +        instructorId: base.instructor.id,                                                 
+      423 +        period: "7d",                                                                     
+      424 +      });                                                                                 
+      425 +                                                                                          
+      426 +      // Should have 8 data points (7 days ago through today)                             
+      427 +      expect(result.length).toBe(8);                                                      
+      428 +      // Each point should have a YYYY-MM-DD date                                         
+      429 +      expect(result[0].date).toMatch(/^\d{4}-\d{2}-\d{2}$/);                              
+      430 +    });                                                                                   
+      431 +                                                                                          
+      432 +    it("returns daily data points for 30d period", () => {                                
+      433 +      const now = new Date();                                                             
+      434 +      testDb                                                                              
+      435 +        .insert(schema.purchases)                                                         
+      436 +        .values({                                                                         
+      437 +          userId: base.user.id,                                                           
+      438 +          courseId: base.course.id,                                                       
+      439 +          pricePaid: 1000,                                                                
+      440 +          country: "US",                                                                  
+      441 +          createdAt: now.toISOString(),                                                   
+      442 +        })                                                                                
+      443 +        .run();                                                                           
+      444 +                                                                                          
+      445 +      const result = getRevenueTimeSeries({                                               
+      446 +        instructorId: base.instructor.id,                                                 
+      447 +        period: "30d",                                                                    
+      448 +      });                                                                                 
+      449 +                                                                                          
+      450 +      // Should have 31 data points (30 days ago through today)                           
+      451 +      expect(result.length).toBe(31);                                                     
+      452 +      expect(result[0].date).toMatch(/^\d{4}-\d{2}-\d{2}$/);                              
+      453 +    });                                                                                   
+      454 +                                                                                          
+      455 +    it("returns monthly data points for 12m period", () => {                              
+      456 +      const now = new Date();                                                             
+      457 +      const sixMonthsAgo = new Date(now);                                                 
+      458 +      sixMonthsAgo.setMonth(now.getMonth() - 6);                                          
+      459 +                                                                                          
+      460 +      testDb                                                                              
+      461 +        .insert(schema.purchases)                                                         
+      462 +        .values({                                                                         
+      463 +          userId: base.user.id,                                                           
+      464 +          courseId: base.course.id,                                                       
+      465 +          pricePaid: 4999,                                                                
+      466 +          country: "US",                                                                  
+      467 +          createdAt: sixMonthsAgo.toISOString(),                                          
+      468 +        })                                                                                
+      469 +        .run();                                                                           
+      470 +                                                                                          
+      471 +      const result = getRevenueTimeSeries({                                               
+      472 +        instructorId: base.instructor.id,                                                 
+      473 +        period: "12m",                                                                    
+      474 +      });                                                                                 
+      475 +                                                                                          
+      476 +      // Should have 13 data points (12 months ago through current month)                 
+      477 +      expect(result.length).toBe(13);                                                     
+      478 +      // Each point should have a YYYY-MM date                                            
+      479 +      expect(result[0].date).toMatch(/^\d{4}-\d{2}$/);                                    
+      480 +    });                                                                                   
+      481 +                                                                                          
+      482 +    it("fills zero-revenue periods with $0 data points", () => {                          
+      483 +      const now = new Date();                                                             
+      484 +      const fiveDaysAgo = new Date(now);                                                  
+      485 +      fiveDaysAgo.setDate(now.getDate() - 5);                                             
+      486 +                                                                                          
+      487 +      testDb                                                                              
+      488 +        .insert(schema.purchases)                                                         
+      489 +        .values({                                                                         
+      490 +          userId: base.user.id,                                                           
+      491 +          courseId: base.course.id,                                                       
+      492 +          pricePaid: 4999,                                                                
+      493 +          country: "US",                                                                  
+      494 +          createdAt: fiveDaysAgo.toISOString(),                                           
+      495 +        })                                                                                
+      496 +        .run();                                                                           
+      497 +                                                                                          
+      498 +      const result = getRevenueTimeSeries({                                               
+      499 +        instructorId: base.instructor.id,                                                 
+      500 +        period: "7d",                                                                     
+      501 +      });                                                                                 
+      502 +                                                                                          
+      503 +      // Most days should be $0                                                           
+      504 +      const zeroDays = result.filter((p) => p.revenue === 0);                             
+      505 +      expect(zeroDays.length).toBe(7); // 7 of 8 days are zero                            
+      506 +                                                                                          
+      507 +      // The purchase day should have revenue                                             
+      508 +      const purchaseDay = result.find((p) => p.revenue > 0);                              
+      509 +      expect(purchaseDay?.revenue).toBe(4999);                                            
+      510 +    });                                                                                   
+      511 +                                                                                          
+      512 +    it("aggregates multiple purchases on the same day", () => {                           
+      513 +      const now = new Date();                                                             
+      514 +      const twoDaysAgo = new Date(now);                                                   
+      515 +      twoDaysAgo.setDate(now.getDate() - 2);                                              
+      516 +                                                                                          
+      517 +      testDb                                                                              
+      518 +        .insert(schema.purchases)                                                         
+      519 +        .values([                                                                         
+      520 +          {                                                                               
+      521 +            userId: base.user.id,                                                         
+      522 +            courseId: base.course.id,                                                     
+      523 +            pricePaid: 4999,                                                              
+      524 +            country: "US",                                                                
+      525 +            createdAt: twoDaysAgo.toISOString(),                                          
+      526 +          },                                                                              
+      527 +          {                                                                               
+      528 +            userId: base.instructor.id,                                                   
+      529 +            courseId: base.course.id,                                                     
+      530 +            pricePaid: 2500,                                                              
+      531 +            country: "IN",                                                                
+      532 +            createdAt: twoDaysAgo.toISOString(),                                          
+      533 +          },                                                                              
+      534 +        ])                                                                                
+      535 +        .run();                                                                           
+      536 +                                                                                          
+      537 +      const result = getRevenueTimeSeries({                                               
+      538 +        instructorId: base.instructor.id,                                                 
+      539 +        period: "7d",                                                                     
+      540 +      });                                                                                 
+      541 +                                                                                          
+      542 +      const purchaseDay = result.find((p) => p.revenue > 0);                              
+      543 +      expect(purchaseDay?.revenue).toBe(7499);                                            
+      544 +    });                                                                                   
+      545 +                                                                                          
+      546 +    it("returns monthly data for 'all' period based on earliest purchase", () => {        
+      547 +      const now = new Date();                                                             
+      548 +      const threeMonthsAgo = new Date(now);                                               
+      549 +      threeMonthsAgo.setMonth(now.getMonth() - 3);                                        
+      550 +                                                                                          
+      551 +      testDb                                                                              
+      552 +        .insert(schema.purchases)                                                         
+      553 +        .values({                                                                         
+      554 +          userId: base.user.id,                                                           
+      555 +          courseId: base.course.id,                                                       
+      556 +          pricePaid: 4999,                                                                
+      557 +          country: "US",                                                                  
+      558 +          createdAt: threeMonthsAgo.toISOString(),                                        
+      559 +        })                                                                                
+      560 +        .run();                                                                           
+      561 +                                                                                          
+      562 +      const result = getRevenueTimeSeries({                                               
+      563 +        instructorId: base.instructor.id,                                                 
+      564 +        period: "all",                                                                    
+      565 +      });                                                                                 
+      566 +                                                                                          
+      567 +      // Should have 4 monthly data points (3 months ago through current month)           
+      568 +      expect(result.length).toBe(4);                                                      
+      569 +      expect(result[0].date).toMatch(/^\d{4}-\d{2}$/);                                    
+      570 +    });                                                                                   
+      571 +                                                                                          
+      572 +    it("returns empty array for 'all' period when no purchases exist", () => {            
+      573 +      const result = getRevenueTimeSeries({                                               
+      574 +        instructorId: base.instructor.id,                                                 
+      575 +        period: "all",                                                                    
+      576 +      });                                                                                 
+      577 +                                                                                          
+      578 +      expect(result).toEqual([]);                                                         
+      579 +    });                                                                                   
+      580 +                                                                                          
+      581 +    it("only includes data for the specified instructor's courses", () => {               
+      582 +      const otherInstructor = testDb                                                      
+      583 +        .insert(schema.users)                                                             
+      584 +        .values({                                                                         
+      585 +          name: "Other Instructor",                                                       
+      586 +          email: "other@example.com",                                                     
+      587 +          role: schema.UserRole.Instructor,                                               
+      588 +        })                                                                                
+      589 +        .returning()                                                                      
+      590 +        .get();                                                                           
+      591 +                                                                                          
+      592 +      const otherCourse = testDb                                                          
+      593 +        .insert(schema.courses)                                                           
+      594 +        .values({                                                                         
+      595 +          title: "Other Course",                                                          
+      596 +          slug: "other-course",                                                           
+      597 +          description: "Not mine",                                                        
+      598 +          instructorId: otherInstructor.id,                                               
+      599 +          categoryId: base.category.id,                                                   
+      600 +          status: schema.CourseStatus.Published,                                          
+      601 +          price: 9999,                                                                    
+      602 +        })                                                                                
+      603 +        .returning()                                                                      
+      604 +        .get();                                                                           
+      605 +                                                                                          
+      606 +      const now = new Date();                                                             
+      607 +      testDb                                                                              
+      608 +        .insert(schema.purchases)                                                         
+      609 +        .values([                                                                         
+      610 +          {                                                                               
+      611 +            userId: base.user.id,                                                         
+      612 +            courseId: base.course.id,                                                     
+      613 +            pricePaid: 4999,                                                              
+      614 +            country: "US",                                                                
+      615 +            createdAt: now.toISOString(),                                                 
+      616 +          },                                                                              
+      617 +          {                                                                               
+      618 +            userId: base.user.id,                                                         
+      619 +            courseId: otherCourse.id,                                                     
+      620 +            pricePaid: 9999,                                                              
+      621 +            country: "US",                                                                
+      622 +            createdAt: now.toISOString(),                                                 
+      623 +          },                                                                              
+      624 +        ])                                                                                
+      625 +        .run();                                                                           
+      626 +                                                                                          
+      627 +      const result = getRevenueTimeSeries({                                               
+      628 +        instructorId: base.instructor.id,                                                 
+      629 +        period: "7d",                                                                     
+      630 +      });                                                                                 
+      631 +                                                                                          
+      632 +      const totalRevenue = result.reduce((sum, p) => sum + p.revenue, 0);                 
+      633 +      expect(totalRevenue).toBe(4999);                                                    
+      634 +    });                                                                                   
+      635 +  });                                                                                     
+      636 +                                                                                          
+      637 +  // ─── Per-Course Breakdown ───                                                         
+      638 +                                                                                          
+      639 +  describe("getPerCourseBreakdown", () => {                                               
+      640 +    it("returns empty array when instructor has no courses", () => {                      
+      641 +      const otherInstructor = testDb                                                      
+      642 +        .insert(schema.users)                                                             
+      643 +        .values({                                                                         
+      644 +          name: "Other Instructor",                                                       
+      645 +          email: "other@example.com",                                                     
+      646 +          role: schema.UserRole.Instructor,                                               
+      647 +        })                                                                                
+      648 +        .returning()                                                                      
+      649 +        .get();                                                                           
+      650 +                                                                                          
+      651 +      const result = getPerCourseBreakdown({                                              
+      652 +        instructorId: otherInstructor.id,                                                 
+      653 +        period: "all",                                                                    
+      654 +      });                                                                                 
+      655 +                                                                                          
+      656 +      expect(result).toEqual([]);                                                         
+      657 +    });                                                                                   
+      658 +                                                                                          
+      659 +    it("returns course info with zeros when no data exists", () => {                      
+      660 +      const result = getPerCourseBreakdown({                                              
+      661 +        instructorId: base.instructor.id,                                                 
+      662 +        period: "all",                                                                    
+      663 +      });                                                                                 
+      664 +                                                                                          
+      665 +      expect(result).toHaveLength(1);                                                     
+      666 +      expect(result[0]).toMatchObject({                                                   
+      667 +        courseId: base.course.id,                                                         
+      668 +        title: base.course.title,                                                         
+      669 +        slug: base.course.slug,                                                           
+      670 +        listPrice: base.course.price,                                                     
+      671 +        revenue: 0,                                                                       
+      672 +        salesCount: 0,                                                                    
+      673 +        enrollmentCount: 0,                                                               
+      674 +        averageRating: null,                                                              
+      675 +        ratingCount: 0,                                                                   
+      676 +      });                                                                                 
+      677 +    });                                                                                   
+      678 +                                                                                          
+      679 +    it("returns correct revenue and sales count per course", () => {                      
+      680 +      testDb                                                                              
+      681 +        .insert(schema.purchases)                                                         
+      682 +        .values([                                                                         
+      683 +          {                                                                               
+      684 +            userId: base.user.id,                                                         
+      685 +            courseId: base.course.id,                                                     
+      686 +            pricePaid: 4999,                                                              
+      687 +            country: "US",                                                                
+      688 +          },                                                                              
+      689 +          {                                                                               
+      690 +            userId: base.instructor.id,                                                   
+      691 +            courseId: base.course.id,                                                     
+      692 +            pricePaid: 2500,                                                              
+      693 +            country: "IN",                                                                
+      694 +          },                                                                              
+      695 +        ])                                                                                
+      696 +        .run();                                                                           
+      697 +                                                                                          
+      698 +      const result = getPerCourseBreakdown({                                              
+      699 +        instructorId: base.instructor.id,                                                 
+      700 +        period: "all",                                                                    
+      701 +      });                                                                                 
+      702 +                                                                                          
+      703 +      expect(result[0].revenue).toBe(7499);                                               
+      704 +      expect(result[0].salesCount).toBe(2);                                               
+      705 +    });                                                                                   
+      706 +                                                                                          
+      707 +    it("returns correct enrollment count per course", () => {                             
+      708 +      testDb                                                                              
+      709 +        .insert(schema.enrollments)                                                       
+      710 +        .values([                                                                         
+      711 +          { userId: base.user.id, courseId: base.course.id },                             
+      712 +          { userId: base.instructor.id, courseId: base.course.id },                       
+      713 +        ])                                                                                
+      714 +        .run();                                                                           
+      715 +                                                                                          
+      716 +      const result = getPerCourseBreakdown({                                              
+      717 +        instructorId: base.instructor.id,                                                 
+      718 +        period: "all",                                                                    
+      719 +      });                                                                                 
+      720 +                                                                                          
+      721 +      expect(result[0].enrollmentCount).toBe(2);                                          
+      722 +    });                                                                                   
+      723 +                                                                                          
+      724 +    it("returns correct average rating and count per course", () => {                     
+      725 +      testDb                                                                              
+      726 +        .insert(schema.courseRatings)                                                     
+      727 +        .values([                                                                         
+      728 +          { userId: base.user.id, courseId: base.course.id, rating: 5 },                  
+      729 +          { userId: base.instructor.id, courseId: base.course.id, rating: 3 },            
+      730 +        ])                                                                                
+      731 +        .run();                                                                           
+      732 +                                                                                          
+      733 +      const result = getPerCourseBreakdown({                                              
+      734 +        instructorId: base.instructor.id,                                                 
+      735 +        period: "all",                                                                    
+      736 +      });                                                                                 
+      737 +                                                                                          
+      738 +      expect(result[0].averageRating).toBe(4);                                            
+      739 +      expect(result[0].ratingCount).toBe(2);                                              
+      740 +    });                                                                                   
+      741 +                                                                                          
+      742 +    it("returns separate data for multiple courses", () => {                              
+      743 +      const course2 = testDb                                                              
+      744 +        .insert(schema.courses)                                                           
+      745 +        .values({                                                                         
+      746 +          title: "Second Course",                                                         
+      747 +          slug: "second-course",                                                          
+      748 +          description: "Another course",                                                  
+      749 +          instructorId: base.instructor.id,                                               
+      750 +          categoryId: base.category.id,                                                   
+      751 +          status: schema.CourseStatus.Published,                                          
+      752 +          price: 2999,                                                                    
+      753 +        })                                                                                
+      754 +        .returning()                                                                      
+      755 +        .get();                                                                           
+      756 +                                                                                          
+      757 +      testDb                                                                              
+      758 +        .insert(schema.purchases)                                                         
+      759 +        .values([                                                                         
+      760 +          {                                                                               
+      761 +            userId: base.user.id,                                                         
+      762 +            courseId: base.course.id,                                                     
+      763 +            pricePaid: 4999,                                                              
+      764 +            country: "US",                                                                
+      765 +          },                                                                              
+      766 +          {                                                                               
+      767 +            userId: base.user.id,                                                         
+      768 +            courseId: course2.id,                                                         
+      769 +            pricePaid: 2999,                                                              
+      770 +            country: "US",                                                                
+      771 +          },                                                                              
+      772 +        ])                                                                                
+      773 +        .run();                                                                           
+      774 +                                                                                          
+      775 +      testDb                                                                              
+      776 +        .insert(schema.enrollments)                                                       
+      777 +        .values([                                                                         
+      778 +          { userId: base.user.id, courseId: base.course.id },                             
+      779 +          { userId: base.user.id, courseId: course2.id },                                 
+      780 +        ])                                                                                
+      781 +        .run();                                                                           
+      782 +                                                                                          
+      783 +      const result = getPerCourseBreakdown({                                              
+      784 +        instructorId: base.instructor.id,                                                 
+      785 +        period: "all",                                                                    
+      786 +      });                                                                                 
+      787 +                                                                                          
+      788 +      expect(result).toHaveLength(2);                                                     
+      789 +                                                                                          
+      790 +      const course1Data = result.find((c) => c.courseId === base.course.id)!;             
+      791 +      const course2Data = result.find((c) => c.courseId === course2.id)!;                 
+      792 +                                                                                          
+      793 +      expect(course1Data.revenue).toBe(4999);                                             
+      794 +      expect(course1Data.salesCount).toBe(1);                                             
+      795 +      expect(course1Data.enrollmentCount).toBe(1);                                        
+      796 +                                                                                          
+      797 +      expect(course2Data.revenue).toBe(2999);                                             
+      798 +      expect(course2Data.salesCount).toBe(1);                                             
+      799 +      expect(course2Data.enrollmentCount).toBe(1);                                        
+      800 +    });                                                                                   
+      801 +                                                                                          
+      802 +    it("respects time period filter", () => {                                             
+      803 +      const now = new Date();                                                             
+      804 +      const threeDaysAgo = new Date(now);                                                 
+      805 +      threeDaysAgo.setDate(now.getDate() - 3);                                            
+      806 +      const tenDaysAgo = new Date(now);                                                   
+      807 +      tenDaysAgo.setDate(now.getDate() - 10);                                             
+      808 +                                                                                          
+      809 +      testDb                                                                              
+      810 +        .insert(schema.purchases)                                                         
+      811 +        .values([                                                                         
+      812 +          {                                                                               
+      813 +            userId: base.user.id,                                                         
+      814 +            courseId: base.course.id,                                                     
+      815 +            pricePaid: 4999,                                                              
+      816 +            country: "US",                                                                
+      817 +            createdAt: threeDaysAgo.toISOString(),                                        
+      818 +          },                                                                              
+      819 +          {                                                                               
+      820 +            userId: base.instructor.id,                                                   
+      821 +            courseId: base.course.id,                                                     
+      822 +            pricePaid: 2500,                                                              
+      823 +            country: "US",                                                                
+      824 +            createdAt: tenDaysAgo.toISOString(),                                          
+      825 +          },                                                                              
+      826 +        ])                                                                                
+      827 +        .run();                                                                           
+      828 +                                                                                          
+      829 +      const result = getPerCourseBreakdown({                                              
+      830 +        instructorId: base.instructor.id,                                                 
+      831 +        period: "7d",                                                                     
+      832 +      });                                                                                 
+      833 +                                                                                          
+      834 +      expect(result[0].revenue).toBe(4999);                                               
+      835 +      expect(result[0].salesCount).toBe(1);                                               
+      836 +    });                                                                                   
+      837 +                                                                                          
+      838 +    it("only includes the specified instructor's courses", () => {                        
+      839 +      const otherInstructor = testDb                                                      
+      840 +        .insert(schema.users)                                                             
+      841 +        .values({                                                                         
+      842 +          name: "Other Instructor",                                                       
+      843 +          email: "other@example.com",                                                     
+      844 +          role: schema.UserRole.Instructor,                                               
+      845 +        })                                                                                
+      846 +        .returning()                                                                      
+      847 +        .get();                                                                           
+      848 +                                                                                          
+      849 +      testDb                                                                              
+      850 +        .insert(schema.courses)                                                           
+      851 +        .values({                                                                         
+      852 +          title: "Other Course",                                                          
+      853 +          slug: "other-course",                                                           
+      854 +          description: "Not mine",                                                        
+      855 +          instructorId: otherInstructor.id,                                               
+      856 +          categoryId: base.category.id,                                                   
+      857 +          status: schema.CourseStatus.Published,                                          
+      858 +          price: 9999,                                                                    
+      859 +        })                                                                                
+      860 +        .run();                                                                           
+      861 +                                                                                          
+      862 +      const result = getPerCourseBreakdown({                                              
+      863 +        instructorId: base.instructor.id,                                                 
+      864 +        period: "all",                                                                    
+      865 +      });                                                                                 
+      866 +                                                                                          
+      867 +      expect(result).toHaveLength(1);                                                     
+      868 +      expect(result[0].courseId).toBe(base.course.id);                                    
+      869 +    });                                                                                   
+      870 +  });                                                                                     
+      871  });
+
+● Let me run the tests to verify everything passes.
+
+● Bash(npx vitest run app/services/analyticsService.test.ts 2>&1)
+  ⎿   RUN  v3.2.4 /home/mattpocock/repos/ai/cohort-003-project
+
+      ✓ app/services/analyticsService.test.ts (29 tests) 76ms
+     … +6 lines (ctrl+o to expand)
+
+● All 29 tests pass. Let me update the tasks and move to the UI.
+
+● Now let me update the route loader to call the new service functions, and update the dashboard component
+  to render the chart and table.
+
+● Update(app/routes/instructor.analytics.tsx)
+  ⎿  Added 2 lines
+       5  import { UserRole } from "~/db/schema";
+       6  import {
+       7    getAnalyticsSummary,
+       8 +  getRevenueTimeSeries,                                                                    
+       9 +  getPerCourseBreakdown,                                                                   
+      10    type TimePeriod,
+      11  } from "~/services/analyticsService";
+      12  import { AnalyticsDashboard } from "~/components/analytics-dashboard";
+
+● Update(app/routes/instructor.analytics.tsx)
+  ⎿  Added 11 lines, removed 1 line
+      46      period,
+      47    });
+      48  
+      49 -  return { summary, period };                                                              
+      49 +  const timeSeries = getRevenueTimeSeries({                                                
+      50 +    instructorId: currentUserId,                                                           
+      51 +    period,                                                                                
+      52 +  });                                                                                      
+      53 +                                                                                           
+      54 +  const courseBreakdown = getPerCourseBreakdown({                                          
+      55 +    instructorId: currentUserId,                                                           
+      56 +    period,                                                                                
+      57 +  });                                                                                      
+      58 +                                                                                           
+      59 +  return { summary, timeSeries, courseBreakdown, period };                                 
+      60  }
+      61  
+      62  export default function InstructorAnalytics({
+
+● Update(app/routes/instructor.analytics.tsx)
+  ⎿  Added 7 lines, removed 2 lines
+      62  export default function InstructorAnalytics({
+      63    loaderData,
+      64  }: Route.ComponentProps) {
+      65 -  const { summary, period } = loaderData;                                                  
+      65 +  const { summary, timeSeries, courseBreakdown, period } = loaderData;                     
+      66  
+      67    return (
+      68      <div className="mx-auto max-w-7xl p-6 lg:p-8">
+     ...
+      85          </p>
+      86        </div>
+      87  
+      88 -      <AnalyticsDashboard summary={summary} period={period} />                             
+      88 +      <AnalyticsDashboard                                                                  
+      89 +        summary={summary}                                                                  
+      90 +        timeSeries={timeSeries}                                                            
+      91 +        courseBreakdown={courseBreakdown}                                                  
+      92 +        period={period}                                                                    
+      93 +      />                                                                                   
+      94      </div>
+      95    );
+      96  }
+
+● Now let me update the AnalyticsDashboard component with the chart and table.
+
+● Read 1 file (ctrl+o to expand)
+
+● Write(app/components/analytics-dashboard.tsx)
+  ⎿  Added 259 lines, removed 2 lines
+       1 +import { useState } from "react";                                                          
+       2  import { useNavigate, useSearchParams } from "react-router";
+       3 +import {                                                                                   
+       4 +  LineChart,                                                                               
+       5 +  Line,                                                                                    
+       6 +  XAxis,                                                                                   
+       7 +  YAxis,                                                                                   
+       8 +  CartesianGrid,                                                                           
+       9 +  Tooltip,                                                                                 
+      10 +  ResponsiveContainer,                                                                     
+      11 +} from "recharts";                                                                         
+      12  import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+      13  import { cn, formatPrice } from "~/lib/utils";
+       4 -import { DollarSign, Users, Star } from "lucide-react";                                    
+       5 -import type { TimePeriod, AnalyticsSummary } from "~/services/analyticsService";           
+      14 +import {                                                                                   
+      15 +  DollarSign,                                                                              
+      16 +  Users,                                                                                   
+      17 +  Star,                                                                                    
+      18 +  ArrowUp,                                                                                 
+      19 +  ArrowDown,                                                                               
+      20 +  ArrowUpDown,                                                                             
+      21 +} from "lucide-react";                                                                     
+      22 +import type {                                                                              
+      23 +  TimePeriod,                                                                              
+      24 +  AnalyticsSummary,                                                                        
+      25 +  RevenueDataPoint,                                                                        
+      26 +  CourseAnalytics,                                                                         
+      27 +} from "~/services/analyticsService";                                                      
+      28  
+      29  const PERIODS: { value: TimePeriod; label: string }[] = [
+      30    { value: "7d", label: "7 days" },
+     ...
+      35  
+      36  interface AnalyticsDashboardProps {
+      37    summary: AnalyticsSummary;
+      38 +  timeSeries: RevenueDataPoint[];                                                          
+      39 +  courseBreakdown: CourseAnalytics[];                                                      
+      40    period: TimePeriod;
+      41  }
+      42  
+      43 +type SortField = keyof Pick<                                                               
+      44 +  CourseAnalytics,                                                                         
+      45 +  | "revenue"                                                                              
+      46 +  | "salesCount"                                                                           
+      47 +  | "enrollmentCount"                                                                      
+      48 +  | "averageRating"                                                                        
+      49 +  | "ratingCount"                                                                          
+      50 +  | "listPrice"                                                                            
+      51 +  | "title"                                                                                
+      52 +>;                                                                                         
+      53 +type SortDirection = "asc" | "desc";                                                       
+      54 +                                                                                           
+      55 +function formatChartRevenue(cents: number): string {                                       
+      56 +  if (cents === 0) return "$0";                                                            
+      57 +  return `$${(cents / 100).toFixed(0)}`;                                                   
+      58 +}                                                                                          
+      59 +                                                                                           
+      60 +function formatTooltipRevenue(cents: number): string {                                     
+      61 +  return formatPrice(cents);                                                               
+      62 +}                                                                                          
+      63 +                                                                                           
+      64  export function AnalyticsDashboard({
+      65    summary,
+      66 +  timeSeries,                                                                              
+      67 +  courseBreakdown,                                                                         
+      68    period,
+      69  }: AnalyticsDashboardProps) {
+      70    const navigate = useNavigate();
+      71    const [searchParams] = useSearchParams();
+      72 +  const [sortField, setSortField] = useState<SortField>("revenue");                        
+      73 +  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");               
+      74  
+      75    function handlePeriodChange(newPeriod: TimePeriod) {
+      76      const params = new URLSearchParams(searchParams);
+     ...
+       78      navigate(`?${params.toString()}`, { replace: true });
+       79    }
+       80  
+       81 +  function handleSort(field: SortField) {                                                 
+       82 +    if (sortField === field) {                                                            
+       83 +      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));                            
+       84 +    } else {                                                                              
+       85 +      setSortField(field);                                                                
+       86 +      setSortDirection("desc");                                                           
+       87 +    }                                                                                     
+       88 +  }                                                                                       
+       89 +                                                                                          
+       90 +  const sortedCourses = [...courseBreakdown].sort((a, b) => {                             
+       91 +    const aVal = a[sortField];                                                            
+       92 +    const bVal = b[sortField];                                                            
+       93 +                                                                                          
+       94 +    // Handle null averageRating — sort nulls last                                        
+       95 +    if (aVal === null && bVal === null) return 0;                                         
+       96 +    if (aVal === null) return 1;                                                          
+       97 +    if (bVal === null) return -1;                                                         
+       98 +                                                                                          
+       99 +    if (typeof aVal === "string" && typeof bVal === "string") {                           
+      100 +      return sortDirection === "asc"                                                      
+      101 +        ? aVal.localeCompare(bVal)                                                        
+      102 +        : bVal.localeCompare(aVal);                                                       
+      103 +    }                                                                                     
+      104 +                                                                                          
+      105 +    return sortDirection === "asc"                                                        
+      106 +      ? (aVal as number) - (bVal as number)                                               
+      107 +      : (bVal as number) - (aVal as number);                                              
+      108 +  });                                                                                     
+      109 +                                                                                          
+      110 +  function SortIcon({ field }: { field: SortField }) {                                    
+      111 +    if (sortField !== field) {                                                            
+      112 +      return <ArrowUpDown className="ml-1 inline size-3 text-muted-foreground" />;        
+      113 +    }                                                                                     
+      114 +    return sortDirection === "asc" ? (                                                    
+      115 +      <ArrowUp className="ml-1 inline size-3" />                                          
+      116 +    ) : (                                                                                 
+      117 +      <ArrowDown className="ml-1 inline size-3" />                                        
+      118 +    );                                                                                    
+      119 +  }                                                                                       
+      120 +                                                                                          
+      121    return (
+      122      <div className="space-y-6">
+      123        {/* Period Selector */}
+     ...
+      190            </CardContent>
+      191          </Card>
+      192        </div>
+      193 +                                                                                          
+      194 +      {/* Revenue Chart */}                                                               
+      195 +      <Card>                                                                              
+      196 +        <CardHeader>                                                                      
+      197 +          <CardTitle>Revenue Over Time</CardTitle>                                        
+      198 +        </CardHeader>                                                                     
+      199 +        <CardContent>                                                                     
+      200 +          {timeSeries.length > 0 ? (                                                      
+      201 +            <ResponsiveContainer width="100%" height={300}>                               
+      202 +              <LineChart data={timeSeries}>                                               
+      203 +                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />         
+      204 +                <XAxis                                                                    
+      205 +                  dataKey="date"                                                          
+      206 +                  tick={{ fontSize: 12 }}                                                 
+      207 +                  tickLine={false}                                                        
+      208 +                  axisLine={false}                                                        
+      209 +                  className="fill-muted-foreground"                                       
+      210 +                />                                                                        
+      211 +                <YAxis                                                                    
+      212 +                  tickFormatter={formatChartRevenue}                                      
+      213 +                  tick={{ fontSize: 12 }}                                                 
+      214 +                  tickLine={false}                                                        
+      215 +                  axisLine={false}                                                        
+      216 +                  className="fill-muted-foreground"                                       
+      217 +                  width={60}                                                              
+      218 +                />                                                                        
+      219 +                <Tooltip                                                                  
+      220 +                  formatter={(value: number) => [                                         
+      221 +                    formatTooltipRevenue(value),                                          
+      222 +                    "Revenue",                                                            
+      223 +                  ]}                                                                      
+      224 +                  labelFormatter={(label: string) => `Date: ${label}`}                    
+      225 +                  contentStyle={{                                                         
+      226 +                    backgroundColor: "hsl(var(--card))",                                  
+      227 +                    border: "1px solid hsl(var(--border))",                               
+      228 +                    borderRadius: "var(--radius)",                                        
+      229 +                  }}                                                                      
+      230 +                />                                                                        
+      231 +                <Line                                                                     
+      232 +                  type="monotone"                                                         
+      233 +                  dataKey="revenue"                                                       
+      234 +                  stroke="hsl(var(--primary))"                                            
+      235 +                  strokeWidth={2}                                                         
+      236 +                  dot={false}                                                             
+      237 +                  activeDot={{ r: 4 }}                                                    
+      238 +                />                                                                        
+      239 +              </LineChart>                                                                
+      240 +            </ResponsiveContainer>                                                        
+      241 +          ) : (                                                                           
+      242 +            <div className="flex h-[300px] items-center justify-center text-muted-foregrou
+          +nd">                                                                                      
+      243 +              No revenue data for this period.                                            
+      244 +            </div>                                                                        
+      245 +          )}                                                                              
+      246 +        </CardContent>                                                                    
+      247 +      </Card>                                                                             
+      248 +                                                                                          
+      249 +      {/* Per-Course Table */}                                                            
+      250 +      <Card>                                                                              
+      251 +        <CardHeader>                                                                      
+      252 +          <CardTitle>Per-Course Breakdown</CardTitle>                                     
+      253 +        </CardHeader>                                                                     
+      254 +        <CardContent>                                                                     
+      255 +          {courseBreakdown.length > 0 ? (                                                 
+      256 +            <div className="overflow-x-auto">                                             
+      257 +              <table className="w-full text-sm">                                          
+      258 +                <thead>                                                                   
+      259 +                  <tr className="border-b text-left">                                     
+      260 +                    <th className="pb-3 pr-4 font-medium">                                
+      261 +                      <button                                                             
+      262 +                        onClick={() => handleSort("title")}                               
+      263 +                        className="inline-flex items-center hover:text-foreground"        
+      264 +                      >                                                                   
+      265 +                        Course                                                            
+      266 +                        <SortIcon field="title" />                                        
+      267 +                      </button>                                                           
+      268 +                    </th>                                                                 
+      269 +                    <th className="pb-3 pr-4 text-right font-medium">                     
+      270 +                      <button                                                             
+      271 +                        onClick={() => handleSort("listPrice")}                           
+      272 +                        className="inline-flex items-center hover:text-foreground"        
+      273 +                      >                                                                   
+      274 +                        List Price                                                        
+      275 +                        <SortIcon field="listPrice" />                                    
+      276 +                      </button>                                                           
+      277 +                    </th>                                                                 
+      278 +                    <th className="pb-3 pr-4 text-right font-medium">                     
+      279 +                      <button                                                             
+      280 +                        onClick={() => handleSort("revenue")}                             
+      281 +                        className="inline-flex items-center hover:text-foreground"        
+      282 +                      >                                                                   
+      283 +                        Revenue                                                           
+      284 +                        <SortIcon field="revenue" />                                      
+      285 +                      </button>                                                           
+      286 +                    </th>                                                                 
+      287 +                    <th className="pb-3 pr-4 text-right font-medium">                     
+      288 +                      <button                                                             
+      289 +                        onClick={() => handleSort("salesCount")}                          
+      290 +                        className="inline-flex items-center hover:text-foreground"        
+      291 +                      >                                                                   
+      292 +                        Sales                                                             
+      293 +                        <SortIcon field="salesCount" />                                   
+      294 +                      </button>                                                           
+      295 +                    </th>                                                                 
+      296 +                    <th className="pb-3 pr-4 text-right font-medium">                     
+      297 +                      <button                                                             
+      298 +                        onClick={() => handleSort("enrollmentCount")}                     
+      299 +                        className="inline-flex items-center hover:text-foreground"        
+      300 +                      >                                                                   
+      301 +                        Enrollments                                                       
+      302 +                        <SortIcon field="enrollmentCount" />                              
+      303 +                      </button>                                                           
+      304 +                    </th>                                                                 
+      305 +                    <th className="pb-3 pr-4 text-right font-medium">                     
+      306 +                      <button                                                             
+      307 +                        onClick={() => handleSort("averageRating")}                       
+      308 +                        className="inline-flex items-center hover:text-foreground"        
+      309 +                      >                                                                   
+      310 +                        Avg Rating                                                        
+      311 +                        <SortIcon field="averageRating" />                                
+      312 +                      </button>                                                           
+      313 +                    </th>                                                                 
+      314 +                    <th className="pb-3 text-right font-medium">                          
+      315 +                      <button                                                             
+      316 +                        onClick={() => handleSort("ratingCount")}                         
+      317 +                        className="inline-flex items-center hover:text-foreground"        
+      318 +                      >                                                                   
+      319 +                        Ratings                                                           
+      320 +                        <SortIcon field="ratingCount" />                                  
+      321 +                      </button>                                                           
+      322 +                    </th>                                                                 
+      323 +                  </tr>                                                                   
+      324 +                </thead>                                                                  
+      325 +                <tbody>                                                                   
+      326 +                  {sortedCourses.map((course) => (                                        
+      327 +                    <tr key={course.courseId} className="border-b last:border-0">         
+      328 +                      <td className="py-3 pr-4 font-medium">{course.title}</td>           
+      329 +                      <td className="py-3 pr-4 text-right">                               
+      330 +                        {formatPrice(course.listPrice)}                                   
+      331 +                      </td>                                                               
+      332 +                      <td className="py-3 pr-4 text-right">                               
+      333 +                        {formatPrice(course.revenue)}                                     
+      334 +                      </td>                                                               
+      335 +                      <td className="py-3 pr-4 text-right">                               
+      336 +                        {course.salesCount.toLocaleString()}                              
+      337 +                      </td>                                                               
+      338 +                      <td className="py-3 pr-4 text-right">                               
+      339 +                        {course.enrollmentCount.toLocaleString()}                         
+      340 +                      </td>                                                               
+      341 +                      <td className="py-3 pr-4 text-right">                               
+      342 +                        {course.averageRating !== null                                    
+      343 +                          ? course.averageRating.toFixed(1)                               
+      344 +                          : "N/A"}                                                        
+      345 +                      </td>                                                               
+      346 +                      <td className="py-3 text-right">                                    
+      347 +                        {course.ratingCount.toLocaleString()}                             
+      348 +                      </td>                                                               
+      349 +                    </tr>                                                                 
+      350 +                  ))}                                                                     
+      351 +                </tbody>                                                                  
+      352 +              </table>                                                                    
+      353 +            </div>                                                                        
+      354 +          ) : (                                                                           
+      355 +            <div className="py-8 text-center text-muted-foreground">                      
+      356 +              No courses to display.                                                      
+      357 +            </div>                                                                        
+      358 +          )}                                                                              
+      359 +        </CardContent>                                                                    
+      360 +      </Card>                                                                             
+      361      </div>
+      362    );
+      363  }
+
+● Now let me verify there are no type errors and the build works.
+
+● Bash(npx tsc --noEmit 2>&1 | head -40)
+  ⎿  app/components/analytics-dashboard.tsx(220,19): error TS2322: Type '(value: number) => [string, "R
+     evenue"]' is not assignable to type 'Formatter<number, "Revenue"> & ((value: number, name: "Revenu
+     e", item: Payload<number, "Revenue">, index: number, payload: Payload<number, "Revenue">[]) => Rea
+     … +14 lines (ctrl+o to expand)
+
+● Need to fix the Tooltip type signatures.
+
+● Update(app/components/analytics-dashboard.tsx)
+  ⎿  Added 3 lines, removed 3 lines
+      217                    width={60}
+      218                  />
+      219                  <Tooltip
+      220 -                  formatter={(value: number) => [                                         
+      221 -                    formatTooltipRevenue(value),                                          
+      220 +                  formatter={(value) => [                                                 
+      221 +                    formatTooltipRevenue(value as number),                                
+      222                      "Revenue",
+      223                    ]}
+      224 -                  labelFormatter={(label: string) => `Date: ${label}`}                    
+      224 +                  labelFormatter={(label) => `Date: ${label}`}                            
+      225                    contentStyle={{
+      226                      backgroundColor: "hsl(var(--card))",
+      227                      border: "1px solid hsl(var(--border))",
+
+● Bash(npx tsc --noEmit 2>&1 | head -20)
+  ⎿  (No output)
+
+● No type errors. Let me also run the full test suite to make sure nothing is broken.
+
+● Bash(npx vitest run 2>&1 | tail -20)
+  ⎿   ✓ app/services/purchaseService.test.ts (13 tests) 51ms
+      ✓ app/services/categoryService.test.ts (29 tests) 87ms
+      ✓ app/services/couponService.test.ts (13 tests) 75ms
+     … +16 lines (ctrl+o to expand)
+
+● All 317 tests pass (including our 29 analytics service tests).
+
+● Phase 2 is complete. Here's what was built:
+
+  Installed:
+  - recharts v3.7.0
+
+  Analytics Service (app/services/analyticsService.ts):
+  - getRevenueTimeSeries() — returns revenue data points bucketed daily (7d/30d) or monthly (12m/all), with
+  zero-revenue periods as $0 data points. For "all" period, starts from the earliest purchase date.
+  - getPerCourseBreakdown() — returns per-course stats: list price, revenue, sales count, enrollment count,
+  average rating, and rating count, all scoped to the selected time period.
+
+  Dashboard Component (app/components/analytics-dashboard.tsx):
+  - Revenue line chart using recharts (ResponsiveContainer, LineChart, Line) with formatted axes and
+  tooltips
+  - Sortable per-course table with 7 columns (Course, List Price, Revenue, Sales, Enrollments, Avg Rating,
+  Ratings) — defaults to revenue descending
+  - Client-side sorting by clicking column headers (toggles asc/desc)
+  - Sort direction indicators (arrows) on column headers
+  - Empty states for both chart and table
+
+  Route (app/routes/instructor.analytics.tsx):
+  - Loader now calls all three service functions and passes timeSeries + courseBreakdown to the dashboard
+  component
+
+  Tests — 16 new tests covering:
+  - Daily/monthly bucketing for time series
+  - Zero-revenue gap filling
+  - Multiple purchase aggregation on same day
+  - "All" period using earliest purchase as start
+  - Instructor isolation for time series
+  - Per-course breakdown with revenue, enrollments, ratings
+  - Multi-course attribution
+  - Time period filtering for per-course data
+
+✻ Baked for 5m 7s
+
+❯ You can't see any lines on the chart. Please add them.  
+
+● The issue is likely that hsl(var(--primary)) doesn't resolve properly in recharts SVG attributes. Let me
+  check the CSS variable format.
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● The CSS variables use oklch(), not raw HSL values — so hsl(var(--primary)) wraps an oklch value in hsl(),
+  producing an invalid color. The fix is to use var(--primary) directly since the variable already contains
+  a complete color value.
+
+● Update(app/components/analytics-dashboard.tsx)
+  ⎿  Added 1 line, removed 1 line
+      200            {timeSeries.length > 0 ? (
+      201              <ResponsiveContainer width="100%" height={300}>
+      202                <LineChart data={timeSeries}>
+      203 -                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />         
+      203 +                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />            
+      204                  <XAxis
+      205                    dataKey="date"
+      206                    tick={{ fontSize: 12 }}
+
+● Update(app/components/analytics-dashboard.tsx)
+  ⎿  Added 2 lines, removed 4 lines
+      203                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+      204                  <XAxis
+      205                    dataKey="date"
+      206 -                  tick={{ fontSize: 12 }}                                                 
+      206 +                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}                
+      207                    tickLine={false}
+      208                    axisLine={false}
+      209 -                  className="fill-muted-foreground"                                       
+      209                  />
+      210                  <YAxis
+      211                    tickFormatter={formatChartRevenue}
+      213 -                  tick={{ fontSize: 12 }}                                                 
+      212 +                  tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}                
+      213                    tickLine={false}
+      214                    axisLine={false}
+      216 -                  className="fill-muted-foreground"                                       
+      215                    width={60}
+      216                  />
+      217                  <Tooltip
+
+● Update(app/components/analytics-dashboard.tsx)
+  ⎿  Added 2 lines, removed 2 lines
+      221                    ]}
+      222                    labelFormatter={(label) => `Date: ${label}`}
+      223                    contentStyle={{
+      224 -                    backgroundColor: "hsl(var(--card))",                                  
+      225 -                    border: "1px solid hsl(var(--border))",                               
+      224 +                    backgroundColor: "var(--card)",                                       
+      225 +                    border: "1px solid var(--border)",                                    
+      226                      borderRadius: "var(--radius)",
+      227                    }}
+      228                  />
+
+● Update(app/components/analytics-dashboard.tsx)
+  ⎿  Added 1 line, removed 1 line
+      229                  <Line
+      230                    type="monotone"
+      231                    dataKey="revenue"
+      232 -                  stroke="hsl(var(--primary))"                                            
+      232 +                  stroke="var(--primary)"                                                 
+      233                    strokeWidth={2}
+      234                    dot={false}
+      235                    activeDot={{ r: 4 }}
+
+● The problem was that the CSS variables use oklch() values (e.g. --primary: oklch(0.205 0 0)), but the
+  recharts props were wrapping them in hsl() — producing invalid colors like hsl(oklch(0.205 0 0)). Changed
+  all color references to use var(--primary), var(--border), etc. directly.
+
+✻ Crunched for 1m 4s
+
+❯ Commit this 
+
+● Bash(git status)
+  ⎿  On branch live-run-through
+     Your branch is ahead of 'origin/live-run-through' by 1 commit.
+       (use "git push" to publish your local commits)
+     … +12 lines (ctrl+o to expand)
+
+● Bash(git diff)
+  ⎿  diff --git a/app/components/analytics-dashboard.tsx b/app/components/analytics-dashboard.tsx
+     index 42e1e95..900e27a 100644
+     --- a/app/components/analytics-dashboard.tsx
+     … +303 lines (ctrl+o to expand)
+
+● Bash(git log --oneline -5)
+  ⎿  e4c1855 Added instructor analytics dashboard (Phase 1: service + route + summary cards)
+     bdc9177 Improved plan with the new skill
+     13ff737 Added prd-to-plan skill
+     … +2 lines (ctrl+o to expand)
+
+● Bash(git add app/components/analytics-dashboard.tsx app/routes/instructor.analytics.tsx
+      app/services/analyticsService.ts app/services/analyticsService.test.ts packag…)
+  ⎿  (No output)
+
+● Bash(git commit -m "$(cat <<'EOF'
+      Added revenue chart and per-course table (Phase 2: analytics dashboard)…)
+  ⎿  [STARTED] Backing up original state...
+     [COMPLETED] Backed up original state in git stash (e3579b2)
+     [STARTED] Running tasks for staged files...
+     … +28 lines (ctrl+o to expand)
+
+● Committed successfully. All 317 tests passed, types checked, and Prettier formatted the code. Commit
+  27f93a8 on live-run-through.
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯  
+────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  32.9%   
