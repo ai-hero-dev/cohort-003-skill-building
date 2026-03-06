@@ -1,0 +1,6 @@
+1900  gh repo create --private --source=.
+ 1901  git status
+ 1902  clear
+ 1903  git push
+ 1904  clear
+ 1905  git push --set-upstream origin main

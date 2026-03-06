@@ -1,0 +1,60 @@
+Starting claude agent in VM 'claude-cohort-003-project-fork'...
+Workspace: /home/mattpocock/repos/ai/cohort-003-project-fork
+
+
+Let me start by exploring the repository structure and understanding what's been done so far.
+
+Now let me read the current state of the admin analytics implementation to understand what's done and what's remaining.
+
+Now I have a clear picture. Phases 1 and 2 are complete. **Phase 3: Course Breakdown Table with Instructor Filter** is the next task to implement.
+
+Let me check the existing per-course breakdown pattern to understand what I need to extend.
+
+Let me check the existing instructor analytics component for table patterns to reuse.
+
+Good, I have a clear picture of the existing patterns. Now let me implement Phase 3. I'll start with the service function.
+
+Now let me add the tests. I need to add tests for both new functions to the existing test file.
+
+Now add the test sections at the end of the describe block.
+
+Now let me update the admin analytics route to add the course breakdown table with instructor filter. I need to update both the loader and the component.
+
+Now I'll rewrite the admin analytics route to include the course breakdown table with instructor filter.
+
+All 358 tests pass (including the 52 analytics tests, up from before). Now typecheck:
+
+Tests and typecheck both pass. Let me commit.
+
+Now let me close the GitHub issue since all 3 phases are complete.
+
+Now let me check if there are any remaining open issues.
+
+The PRD issue (#1) is still open. Since all the work described in it is now implemented, let me close it too.
+
+No open issues remaining.
+
+<promise>NO MORE TASKS</promise>
+
+## Summary
+
+Completed **Phase 3: Course Breakdown Table with Instructor Filter** for the Admin Analytics Dashboard.
+
+### What was built:
+1. **`getAdminPerCourseBreakdown()`** service function - returns per-course analytics (revenue, sales, enrollments, ratings) with instructor names, with optional `instructorId` filter for server-side filtering
+2. **`getInstructorsWithCourses()`** helper - returns only instructors who have at least one course (for populating the dropdown)
+3. **Course breakdown table** in `admin.analytics.tsx` with sortable columns: Title, Instructor, List Price, Revenue, Sales, Enrollments, Avg Rating
+4. **Instructor filter dropdown** above the table, using `?instructor=` query param for server-side filtering
+5. **10 new tests** covering both service functions
+
+### Files changed:
+- `app/services/analyticsService.ts` - 2 new exported functions + types
+- `app/services/analyticsService.test.ts` - 10 new tests (52 total in file)
+- `app/routes/admin.analytics.tsx` - added table UI, instructor filter, sort logic
+
+### Results:
+- All 358 tests pass
+- Typecheck clean
+- Both GitHub issues (#1 PRD, #2 Plan) closed
+
+Ralph complete after 1 iterations.
