@@ -1,0 +1,309 @@
+mattpocock@matt-pc:~/repos/ai/cohort-003-project$ ./ralph/afk.sh 10
+Starting claude agent in VM 'claude-cohort-003-project'...
+Workspace: /home/mattpocock/repos/ai/cohort-003-project
+I'll start by exploring the repo structure and understanding the codebase, then pick the right task.
+
+I'll work on **Issue #58: XP on Lesson Completion + Sidebar Level Display** - it's the foundational task with no blockers that everything else depends on.
+
+Let me read the key files I need to modify.
+
+Now let me check the lesson route action and an existing test for patterns.
+
+Now I have a clear picture. Let me implement issue #58. I'll work through this step by step:
+
+1. Schema + migration
+2. Shared leveling utility
+3. XP service + tests
+4. Wire into lesson completion
+5. Sidebar display
+
+Let me start with the schema, leveling utility, and service.
+
+Now generate the migration and create the leveling utility and XP service in parallel.
+
+Now apply the migration and write the tests.
+
+Need to rebuild better-sqlite3 first, then write the test files.
+
+Now let me apply the migration and write the test files.
+
+Now write the test files that were cancelled earlier.
+
+Now run the tests to verify.
+
+All 18 tests pass. Now let me wire XP into the lesson completion action and add the sidebar display.
+
+Now I'll add the XP award to the lesson completion action and update the sidebar.
+
+Now update the sidebar to show XP and level for students.
+
+Now add the gamification section to the sidebar, between the nav and recent courses.
+
+Now update the layout loader to fetch and pass gamification data.
+
+Now run the full test suite and typecheck.
+
+All 366 tests pass and typecheck is clean. Let me commit.
+
+Now close the issue.
+
+No GitHub token available. I'll note the issue should be closed manually.
+
+**Issue #58 is complete.** Here's a summary of what was implemented:
+
+### XP on Lesson Completion + Sidebar Level Display
+
+**Schema & Migration:**
+- New `xp_events` table (`userId`, `amount`, `sourceType`, `sourceId`, `createdAt`) with auto-generated migration
+
+**Shared Leveling Utility** (`app/lib/leveling.ts`):
+- `xpRequiredForLevel(N)` - uses `round(80 * N^1.3)` formula
+- `getLevelFromXp(totalXp)` - returns level, current XP within level, XP needed for next level
+- Works on both server and client
+
+**XP Service** (`app/services/xpService.ts`):
+- `awardXp()` - awards XP with dedup by `sourceType + sourceId` (returns null for duplicates)
+- `getTotalXp()` - sums all XP for a user
+- `getXpEvents()` - returns all events for audit
+
+**Integration:**
+- Lesson completion action now awards 10 XP (idempotent)
+- Layout loader fetches gamification data for students
+- Sidebar shows Level, XP progress bar, and total XP (students only)
+
+**Tests:** 18 new tests (all passing), 366 total tests passing, typecheck clean.
+
+**Note:** GitHub CLI isn't authenticated, so issue #58 needs to be closed manually.
+
+Starting claude agent in VM 'claude-cohort-003-project'...
+Workspace: /home/mattpocock/repos/ai/cohort-003-project
+I'll work on **Issue #59: Streak Tracking + Sidebar Streak Display**. It's unblocked and needed before #61 can proceed.
+
+Let me explore the codebase first.
+
+Now let me read the test setup and existing service tests for patterns.
+
+Now let me read the sidebar and layout to see the current gamification integration.
+
+Now I have full context. Let me implement Issue #59 step by step.
+
+**Step 1: Add `streakActivities` table to schema.ts**
+
+**Step 2: Generate migration**
+
+**Step 3: Create streakService.ts**
+
+**Step 4: Create streakService.test.ts**
+
+Let me run the tests to see if they pass before continuing.
+
+All 18 streak tests pass. Now let me continue with the integration.
+
+**Step 5: Extend lesson completion to record streak activity**
+
+**Step 6: Add streak to sidebar and layout loader**
+
+First, update the layout loader to fetch streak data:
+
+Now update the sidebar to display streak data. Update the `GamificationData` interface and add the streak UI:
+
+Now add the streak display below the XP progress bar in the sidebar:
+
+**Step 7: Run tests and typecheck**
+
+All 384 tests pass, typecheck clean. Let me commit.
+
+Commit succeeded with all pre-commit hooks passing (prettier, typecheck, tests). Now let me close the GitHub issue.
+
+No GitHub auth configured. The issue can't be closed via CLI, but the work is complete.
+
+---
+
+**Issue #59: Streak Tracking + Sidebar Streak Display** is done. Here's what was built:
+
+**New files:**
+- `app/db/schema.ts` - Added `streakActivities` table (userId, date, createdAt)
+- `drizzle/0008_great_doctor_spectrum.sql` - Migration
+- `app/services/streakService.ts` - `recordStreakActivity`, `getCurrentStreak`, `getLongestStreak`, `getStreakData`
+- `app/services/streakService.test.ts` - 18 tests all passing
+
+**Modified files:**
+- `app/routes/courses.$slug.lessons.$lessonId.tsx` - Records streak activity on lesson completion
+- `app/routes/layout.app.tsx` - Fetches streak data for student users
+- `app/components/sidebar.tsx` - Displays current streak (flame icon) + longest streak
+
+**Key decisions:**
+- Streak calculated from activity log each time (simple, correct; denormalization can come later)
+- Current streak counts if last activity is today OR yesterday
+- One row per user per UTC day, deduped on insert
+- Flame icon (orange-500) visually distinct from XP star (yellow-500)
+
+Starting claude agent in VM 'claude-cohort-003-project'...
+Workspace: /home/mattpocock/repos/ai/cohort-003-project
+I'll work on **Issue #60: Quiz XP (First Attempt Only)**. The XP system (#58) and streak system (#59) are done, and this is the next unblocked task.
+
+Let me read the key files I need to modify.
+
+Now let me read the lesson route to see how quiz submission works and the test setup.
+
+Now I have a clear picture. The implementation is straightforward:
+
+1. **Route change**: After `computeResult`, if the quiz was passed, call `awardXp(userId, 5, "quiz_pass", quizId)`
+2. **Tests**: Add tests for quiz XP awarding, dedup, and failure cases
+
+Let me also check the imports in the route file.
+
+Good, `awardXp` is already imported. Now let me implement the changes:
+
+**1. Add quiz XP awarding to the route:**
+
+**2. Add service-level tests for quiz XP:**
+
+Now I need to write tests. The existing `xpService.test.ts` already tests the dedup mechanism. I'll add quiz-specific tests that verify the integration pattern (awarding 5 XP for quiz_pass, dedup, and no XP on failure).
+
+Now I'll create a comprehensive test file for quiz XP that tests through `computeResult` + `awardXp`:
+
+Now let's run the tests and typecheck:
+
+The issue is the `better-sqlite3` mock is interfering with `createTestDb`. The `quizScoringService` imports `better-sqlite3` directly at module level. I need to mock it more carefully — only mock the module-level `rawDb` in quizScoringService, not the real `better-sqlite3` used by the test setup.
+
+Let me check how other tests handle this. The `computeResult` function uses the drizzle `db` (via `~/db` import), not the raw `rawDb`. The `rawDb` is only used in `getQuizStats` and `getUserQuizHistory`. So I can just avoid mocking `better-sqlite3` and instead handle it differently.
+
+Actually, looking at the quizScoringService more carefully — `computeResult` only uses the drizzle `db` import. The `rawDb` is created at module level (`const rawDb = new Database("data.db")`). This will try to open the actual file. Let me restructure my mock approach.
+
+The issue was the `better-sqlite3` mock. By removing it, the `quizScoringService` module will try to create `new Database("data.db")` at import time. This should work fine since the file either exists or will be created. The important part is the `~/db` mock redirects all drizzle queries to the in-memory test DB.
+
+All 390 tests pass, including the 6 new quiz XP tests. Now let's run typecheck:
+
+Type error — `questionType` expects a `QuestionType` enum, not a plain string. Let me check the enum:
+
+Typecheck passes. Let me run tests once more to confirm everything still works:
+
+All 390 tests pass, types clean. Now let me commit and close the issue.
+
+Pre-commit hooks passed (prettier, typecheck, tests). Now close the issue:
+
+No GitHub token available. I'll skip closing the issue via CLI.
+
+**Issue #60 (Quiz XP) is complete.** Here's a summary:
+
+### Changes made:
+
+1. **`app/routes/courses.$slug.lessons.$lessonId.tsx`** — Added `awardXp(currentUserId, 5, "quiz_pass", quizId)` call after a successful quiz pass in the `submit-quiz` intent handler. Only fires when `result.passed` is true.
+
+2. **`app/services/quizXp.test.ts`** — 6 new tests covering:
+   - 5 XP awarded on first quiz pass
+   - No duplicate XP on retake (dedup via sourceType+sourceId)
+   - No XP when quiz is failed
+   - Quiz XP accumulates with lesson XP
+   - Different users can independently earn quiz XP for the same quiz
+   - XP awarded on first pass even after prior failed attempts
+
+### Key decisions:
+- XP award happens in the route handler (not in `computeResult`) to keep the scoring service pure
+- Uses existing `awardXp` dedup pattern: `sourceType="quiz_pass"` + `sourceId=quizId`
+- 5 XP per quiz pass, matching the PRD specification
+
+### Note:
+Could not close GitHub issue #60 — no `GH_TOKEN` configured in this environment. The issue should be closed manually.
+
+Starting claude agent in VM 'claude-cohort-003-project'...
+Workspace: /home/mattpocock/repos/ai/cohort-003-project
+Looking at the issues and commits, #58, #59, and #60 are done. #62 is HITL. The next AFK task is **#61: Dashboard Summary Card + Module Completion Toast**.
+
+Let me explore the codebase to understand the current structure.
+
+Good overview. Now let me read the key files I need to modify.
+
+Now let me read the lesson route's action handler and the key module/lesson structure more carefully.
+
+Let me check how `flattenCourseLessons` works and how the current user role is determined on the dashboard.
+
+Now I have a clear picture. Let me also check how the lesson route's action response is consumed client-side (for the toast).
+
+Now I have everything I need. Let me implement both features.
+
+**Plan:**
+1. **Dashboard Summary Card** - Add gamification data to dashboard loader, render card for students
+2. **Module Completion Toast** - In lesson action, detect last-in-module completion, return info to client for toast
+
+Let me start implementing.
+
+Good. Now let me check how the layout route gets the current user's role for the dashboard.
+
+Now I have everything. Let me implement both features.
+
+### 1. Dashboard Summary Card
+
+Now add gamification data to the loader:
+
+Now add the gamification card to the component:
+
+### 2. Module Completion Toast
+
+Now I need to modify the lesson completion action to detect when the last lesson in a module is completed, and show a toast on the client.
+
+Now let me check if `getLessonById` is already imported:
+
+Good, `getLessonById` is already imported from `lessonService`. But I just added a second import from `lessonService`. Let me fix that by merging the imports.
+
+Now check if `isLessonCompleted` is already imported from progressService:
+
+I need to add `isLessonCompleted` to the existing import from progressService:
+
+Now update the mark-complete action to detect module completion:
+
+Now check if `getModuleById` is already imported:
+
+Good, already imported. Now add the client-side toast for module completion. Let me find the useEffect where `justCompleted` is used:
+
+Now let me run the feedback loops.
+
+Typecheck passes. Now let me write the tests.
+
+Let me look at an existing test to understand the pattern.
+
+Now let me write tests for the module completion detection. I'll create a test file for the dashboard/module completion logic.
+
+Wait, I used `schema.eq` in the test but that's from drizzle-orm, not schema. Let me fix that.
+
+Now let's run the tests.
+
+All 396 tests pass including the 6 new module completion tests. Let me also run typecheck one more time to be safe.
+
+All clean. Now let me commit.
+
+Commit succeeded. All 396 tests pass, typecheck clean. Now let me close the issue.
+
+GitHub CLI isn't authenticated. Let me check if there are remaining AFK tasks.
+
+Looking at the issues:
+- **#58** - Done (committed)
+- **#59** - Done (committed)  
+- **#60** - Done (committed)
+- **#61** - Done (just committed)
+- **#62** - HITL (QA, requires human)
+- **#57** - Parent PRD, not a task
+
+All AFK tasks are complete.
+
+<promise>NO MORE TASKS</promise>
+
+**Summary of what was done for Issue #61:**
+
+1. **Dashboard Summary Card** (`app/routes/dashboard.tsx`):
+   - Loader fetches XP, level, and streak data for student users
+   - Renders a card with Level (star icon), XP progress bar, current streak (flame), and longest streak (trophy)
+   - Hidden for non-student roles
+
+2. **Module Completion Toast** (`app/routes/courses.$slug.lessons.$lessonId.tsx`):
+   - Action handler detects when completing a lesson finishes all lessons in its module
+   - Returns `moduleComplete` with module title and total XP (lessons × 10)
+   - Client shows Sonner toast on module completion
+
+3. **Tests** (`app/services/moduleCompletion.test.ts`):
+   - 6 tests covering: last-lesson trigger, non-final lesson skip, single-lesson module, per-module isolation, variable module sizes
+
+All 396 tests pass, typecheck clean. Could not close the GitHub issue due to missing `gh` auth.
+
+Ralph complete after 4 iterations.
