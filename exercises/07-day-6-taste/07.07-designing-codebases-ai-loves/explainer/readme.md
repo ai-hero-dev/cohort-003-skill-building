@@ -1,1 +1,0 @@
-# Designing Codebases Ai Loves
