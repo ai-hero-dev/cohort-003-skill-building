@@ -1,7 +1,3 @@
-# Write Great PRDs With This Skill
-
-## Understanding the Goal
-
 Let me start by dictating what I actually want out of this PRD.
 
 I want an instructor analytics dashboard primarily focused on revenue. I'd like to hammer out with you exactly what that entails and what that looks like.
@@ -12,6 +8,8 @@ Key constraints:
 - Although admins should be able to see it too
 - Instructors can only view analytics on their own courses
 - Instructors should have a single analytics dashboard which displays the information for all of their courses
+
+![Showing my initial prompt](https://res.cloudinary.com/total-typescript/image/upload/v1773316377/ai-hero-images/jifkcwjy0o6ezpj5zq7l.png)
 
 ## Starting the Exploration
 
@@ -26,15 +24,21 @@ It's finished exploring. Now we begin the questioning.
 
 ## The Question and Answer Process
 
-The first question is: what are the key revenue metrics you want displayed on the dashboard?
+The first question is: what are the key revenue metrics you want displayed on the dashboard:
+
+![Showing the Key Revenue Metrics question](https://res.cloudinary.com/total-typescript/image/upload/v1773316379/ai-hero-images/j82nlteczvqiduj1fsug.png)
 
 The LLM gives me options like total lifetime revenue, revenue per course, revenue over time, average order value, PPP discount impact, team versus individual purchase breakdown, and geographic breakdown by country.
 
 I think I'm going to go with option two here: revenue totals plus time.
 
-The next question is about time filters on the granularity of the revenue over time. Fixed periods like last 7 days, last 30 days, last 12 months look good to me.
+The next question is about time filters on the granularity of the revenue over time. Fixed periods like last 7 days, last 30 days, last 12 months look good to me:
+
+![Time filters question](https://res.cloudinary.com/total-typescript/image/upload/v1773316379/ai-hero-images/avasr4vd3qbmmxjkc2fl.png)
 
 **Should the dashboard include written enrollment metrics alongside revenue?** I think probably revenue plus enrollments plus ratings because we want to see student satisfaction data. That's really important.
+
+![Enrollment metrics and revenue](https://res.cloudinary.com/total-typescript/image/upload/v1773316387/ai-hero-images/wrjshkmtrwjhguejxshi.png)
 
 Even in that first round of questions, I can feel the thing coming into life more. It really is crazy how beneficial these conversations are, just rubber ducking with a smart agent. And one that knows your codebase too. Very cool.
 
@@ -42,19 +46,29 @@ Even in that first round of questions, I can feel the thing coming into life mor
 
 For the dashboard layout, the LLM asks: how should the per course data be presented?
 
+![Dashboard layout question](https://res.cloudinary.com/total-typescript/image/upload/v1773316399/ai-hero-images/gtylqlrrxgupksyqbsoy.png)
+
 I was imagining when I designed this a summary cards plus table. So you would have some summary cards at the very top and then a detailed table about all of the breakdowns. I think that makes most sense so I'm going to pick it.
 
-For revenue over time, we probably do need a line chart, so we'll probably pull in a charting library.
+For revenue over time, we probably do need a line chart, so we'll probably pull in a charting library:
+
+![Revenue over time question](https://res.cloudinary.com/total-typescript/image/upload/v1773316400/ai-hero-images/x9zw3icayrrubvn9ulfx.png)
 
 For ratings, I think average plus count only makes sense.
+
+![Ratings question](https://res.cloudinary.com/total-typescript/image/upload/v1773316401/ai-hero-images/bmj8jiwyiojoahwqyfo4.png)
 
 ## Building on Decisions
 
 More questions come in.
 
-For fixed time periods, I think seven days, 30 days, 12 months. This is for filtering the revenue trend line.
+For fixed time periods, I think seven days, 30 days, 12 months. This is for filtering the revenue trend line:
+
+![Fixed time periods question](https://res.cloudinary.com/total-typescript/image/upload/v1773316403/ai-hero-images/mr5izjo7laypj4hvf8bj.png)
 
 **Is an important one.** For the admin view should admin see a platform-wide analytics dashboard of all instructors or should they just be able to access any individual instructor's dashboard?
+
+![Platform-wide analytics dashboard question](https://res.cloudinary.com/total-typescript/image/upload/v1773316404/ai-hero-images/lwybdfxtf5iu8xka906x.png)
 
 If we did a platform-wide analytics dashboard, that would be a massive increase in scope. Now we probably could do that as part of this PRD but it wasn't quite what I was envisaging.
 
@@ -62,13 +76,17 @@ I want the admins really to be able to view the instructor's dashboard just so t
 
 **Should the summary cards at the top of the dashboard also respect the selected time period or should they always show the all time totals?**
 
+![Summary card behavior question](https://res.cloudinary.com/total-typescript/image/upload/v1773316405/ai-hero-images/i8qcfjzzdkxtjtc9k8bg.png)
+
 I use Stripe quite a lot and I have a feeling that Stripe respects the time filter. So I'm going to go with what Stripe does in this case.
 
 Again, these are not easy decisions. The LLM asking us right now really is grilling us here.
 
 ## Wrestling With UI Decisions
 
-Some of these questions, especially the UI ones, are really hard to answer, actually. And this is something that comes out during this planning stage, it's not necessarily simple to answer these in text.
+Some of these questions, especially the UI ones, are really hard to answer, actually. And this is something that comes out during this planning stage, it's not necessarily simple to answer these in text:
+
+![Question about summary cards](https://res.cloudinary.com/total-typescript/image/upload/v1773316406/ai-hero-images/b3loxorfawljfx8iwyam.png)
 
 What I would really like is a prototype to walk through here that would be the highest fidelity way to do it. So really you're having to use the power of your imagination to do this.
 
@@ -80,7 +98,11 @@ I'm going to go for the top one, which is just three cards at the top:
 
 Which column should appear in the per course table below the summary cards? I'm going to go detailed just to really max out that area.
 
+![Table columns question](https://res.cloudinary.com/total-typescript/image/upload/v1773316407/ai-hero-images/umhsknvcdrmyjor0qlep.png)
+
 And then how should admins access an instructor's analytics? They need a way to navigate to any instructor's dashboard. I think a link from the admin users page makes most sense there.
+
+![Instructor Analytics Access question](https://res.cloudinary.com/total-typescript/image/upload/v1773316408/ai-hero-images/orjkr6ncs2qflxkexh5s.png)
 
 ## The Implementation Questions
 
@@ -88,11 +110,21 @@ A few final questions on the chart details and some edge cases.
 
 You know how this is like a brutal grilling, it's giving us here. It's so unbelievably useful because all of this conversation is going to end up inside the PRD.
 
-For the line chart, x-axis granularity, last seven days should show daily points. What about the other periods? Let's auto scale it, so 12 months does monthly. All time is monthly. 30 days is daily. That makes sense.
+For the line chart, x-axis granularity, last seven days should show daily points. What about the other periods?
 
-The per course table should also be filtered by the selected period. I think this is a really good implementation question.
+![X Axis Granularity Question](https://res.cloudinary.com/total-typescript/image/upload/v1773316409/ai-hero-images/otzow10qtxhxkmecspct.png)
+
+Let's auto scale it, so 12 months does monthly. All time is monthly. 30 days is daily. That makes sense.
+
+The per course table should also be filtered by the selected period:
+
+![Table filtering question](https://res.cloudinary.com/total-typescript/image/upload/v1773316410/ai-hero-images/iyoeirjicnspnmjgb06i.png)
+
+I think this is a really good implementation question:
 
 **Should the time period filter be stored in the URL as a search param or as client-side state?**
+
+![URL search param of client-side state?](https://res.cloudinary.com/total-typescript/image/upload/v1773316411/ai-hero-images/mlkg9ypfqtkfkrett4au.png)
 
 URL params mean the page is linkable, bookmarkable, which I love. So definitely in a URL search param.
 
@@ -100,9 +132,21 @@ If an instructor has no courses or no purchases yet, I think an empty state mess
 
 Just a couple more details to lock down.
 
-When an admin clicks View Analytics for an instructor on admin users, what should the URL look like? That's a great point. I guess this doesn't really matter. I'll just put it in like this one I think.
+When an admin clicks View Analytics for an instructor on admin users, what should the URL look like?
 
-The line chart should show revenue only. Should the per course table be sortable by clicking column headers? I think you probably do need it to be sortable.
+![View Analytics Page Question](https://res.cloudinary.com/total-typescript/image/upload/v1773316412/ai-hero-images/g8o1ilfjkcamleeauglu.png)
+
+That's a great point. I guess this doesn't really matter. I'll just put it in like this one I think.
+
+The line chart should show revenue only:
+
+![Line chard question](https://res.cloudinary.com/total-typescript/image/upload/v1773316413/ai-hero-images/yqef4fmgtneupkklta4y.png)
+
+Should the per course table be sortable by clicking column headers?
+
+![Table sorting question](https://res.cloudinary.com/total-typescript/image/upload/v1773316414/ai-hero-images/mpoaept50q7xg1q0gidy.png)
+
+I think you probably do need it to be sortable.
 
 Notice all of these questions and we're only at 15.6% context here. You know, this is not a context-heavy operation, really.
 
@@ -129,17 +173,21 @@ The problem statement is really good:
 
 The problem statement gives an overall why, which is really important for the implementation. When an agent has kind of like decisions to make while it's implementing, it can go back to the problem statement and understand why this feature even exists.
 
-Then we have a dedicated analytics dashboard for instructors that provides a revenue focused overview. I think we kind of understand the solution here, and this is a nice summary of it.
+![Problem statement](https://res.cloudinary.com/total-typescript/image/upload/v1773316415/ai-hero-images/m2aej6iew2yelgrhczwg.png)
 
-And then this is the real juice: we have a numbered list of many, many user stories in this PRD.
+Then we have a dedicated analytics dashboard for instructors that provides a revenue focused overview. I think we kind of understand the solution here, and this is a nice summary of it:
+
+![Solution statement](https://res.cloudinary.com/total-typescript/image/upload/v1773316416/ai-hero-images/dgn7kedi5yi3kb2h3zfa.png)
 
 ## Understanding User Stories
+
+And then this is the real juice. We have a numbered list of many, many user stories in this PRD:
+
+![User stories](https://res.cloudinary.com/total-typescript/image/upload/v1773316417/ai-hero-images/y5omhdehjh9uy556srfr.png)
 
 Writing user stories is something you may have done as a professional developer. AI is really, really good at it.
 
 You can think of these kind of like as acceptance criteria for what the final thing should look like. This is where we describe in detail what our destination is. But there are many, many different ways to frame this and phrase this.
-
-For instance, the Gherkin language under the Cucumber project does this quite well. This is an actual coding language for specifying how these features should be put together. And since AI knows this quite well, you could use Gherkin here to specify exactly how these should work.
 
 We also number these user stories so that we can later reference those numbers in the plan as a shorthand, which I find works really, really well.
 
@@ -155,7 +203,9 @@ Again, tying it back to the why, which is very important. Understanding why each
 
 ## The Implementation Plan
 
-If we fold up the user stories, we can see then we have a list of implementation decisions.
+If we fold up the user stories, we can see then we have a list of implementation decisions:
+
+![Folded-up version of the PRD, viewing the headings](https://res.cloudinary.com/total-typescript/image/upload/v1773316419/ai-hero-images/jjnd3kh3kjztb3iwjynh.png)
 
 First of all, a list of modules:
 
@@ -163,7 +213,7 @@ First of all, a list of modules:
 - A couple of new routes for the instructor analytics
 - A shared analytics dashboard component
 
-You note here that it's not providing implementation suggestions here. It's just kind of saying these are the high level modules that we're going to create.
+You note here that it's not providing implementation suggestions here. It's just kind of sayin g these are the high level modules that we're going to create.
 
 Then we've got a list of technical decisions down below.
 
@@ -175,9 +225,13 @@ Then we've got a list of technical decisions down below.
 
 ## Schema and Testing
 
-Then below that, we have some schema changes, some kind of testing decisions as well, which I really like.
+Then below that, we have some schema changes, some kind of testing decisions as well, which I really like:
 
-We're specifically saying what to test inside here. We've got some prior art. Then we've got some out of scope stuff.
+![Schema changes and testing decisions](https://res.cloudinary.com/total-typescript/image/upload/v1773316422/ai-hero-images/nvlln0lxnloze9mikklm.png)
+
+We're specifically saying what to test inside here. We've got some prior art. Then we've got some out of scope stuff:
+
+![Out of scope section](https://res.cloudinary.com/total-typescript/image/upload/v1773316423/ai-hero-images/aaom2luiihnzz4tpxklp.png)
 
 And this is actually really detailed. This is basically the negative space of all of the positive decisions we had, where we said okay, we do this and not this.
 
@@ -189,12 +243,12 @@ For example:
 
 ## Final Notes
 
-And finally, I just like having this further notes section at the bottom here. So this is just for any kind of stuff that doesn't fit into the top sections.
+And finally, I just like having this further notes section at the bottom here. So this is just for any kind of stuff that doesn't fit into the top sections:
+
+![Further notes area](https://res.cloudinary.com/total-typescript/image/upload/v1773316424/ai-hero-images/lmvsuj1hedgffravbvnk.png)
 
 And so there we go. We have successfully described the destination for where we want to go with this analytics dashboard.
 
 And hopefully, if you walk through a similar process to me, then you should end up with a similarly detailed document. You might have slightly different emphases in your document. The sections might be a slightly different lengths. But it will probably follow a template like this.
 
 And like me, you are probably now itching to see this come to life and actually build something from it.
-
-So nice work. I will see you in the next one.
