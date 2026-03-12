@@ -1,5 +1,3 @@
-# Generate a Multi-Phase Plan From Your PRD
-
 You've built a solid PRD that captures all the requirements for a large feature. But a PRD is just your destination, you still need a map for how to get there.
 
 The challenge is that large features don't fit neatly into a single context window. You need to break them down into phases that Claude Code can tackle one at a time, each phase building on the last.
@@ -14,7 +12,7 @@ Navigate to your repository and start a fresh Claude Code session.
 
 - [ ] Reference your PRD from the previous lesson using the `@` symbol
 
-Inside Claude Code, use `@` to pull in the PRD file you created in lesson 04.02. This gives Claude Code all the context it needs about your feature.
+Inside Claude Code, use `@` to pull in the PRD file you created in the previous lesson. This gives Claude Code all the context it needs about your feature.
 
 - [ ] Ask Claude Code to create a multi-phase plan
 
