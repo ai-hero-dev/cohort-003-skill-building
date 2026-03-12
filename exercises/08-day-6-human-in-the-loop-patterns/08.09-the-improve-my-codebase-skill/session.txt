@@ -1,0 +1,225 @@
+ ▐▛███▜▌   Claude Code v2.1.72
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/repos/ai/cohort-003-project
+
+❯ /improve-codebase-architecture                                                                            
+
+● I'll start by exploring the codebase to understand its structure and find architectural friction points.
+
+● Explore(Explore codebase architecture)
+  ⎿  Done (74 tool uses · 84.1k tokens · 2m 32s)
+  (ctrl+o to expand)
+
+● Read 1 file (ctrl+o to expand)
+
+● Architecture Exploration Complete
+
+  Here are the deepening opportunities I found:
+
+  ---
+  1. Quiz Subsystem — Merge scoring, CRUD, and XP awarding into one deep module
+
+  - Cluster: quizService.ts, quizScoringService.ts, xpService.ts, plus quiz UI logic in the lesson route
+  - Why they're coupled: Quiz scoring imports raw better-sqlite3 alongside Drizzle ORM (mixed abstraction
+  levels). XP awarding is triggered by quiz pass but lives in a separate service. Scoring, question
+  management, and attempt recording all share the same DB tables and must be coordinated.
+  - Dependency category: Local-substitutable (SQLite via Drizzle, testable with in-memory DB)
+  - Test impact: quizXp.test.ts, quizScoringService.test.ts would be replaced by boundary tests on a unified
+   quiz module
+
+  ---
+  2. Student Progress System — Consolidate the 6-file progress calculation sprawl
+
+  - Cluster: progressService.ts, courseService.ts, lessonService.ts, moduleService.ts,
+  videoTrackingService.ts, streakService.ts
+  - Why they're coupled: Understanding course progress requires bouncing across 6 service files. The
+  dashboard makes 4+ redundant DB round-trips per course (N+1 pattern). calculateProgress() internally
+  re-queries lesson/module data that callers already have.
+  - Dependency category: Local-substitutable (SQLite/Drizzle)
+  - Test impact: moduleCompletion.test.ts and scattered progress-related assertions would be replaced by a
+  single progress module's boundary tests
+
+  ---
+  3. Enrollment + Side Effects — Wrap enrollment, notification, and coupon redemption into a transactional
+  domain operation
+
+  - Cluster: enrollmentService.ts, notificationService.ts, couponService.ts, purchaseService.ts
+  - Why they're coupled: enrollUser() calls createNotification() as a side effect with no transaction safety
+   — enrollment succeeds but notification can fail silently. Coupon redemption similarly coordinates team
+  lookups, enrollment, and multi-recipient notifications in one non-atomic flow.
+  - Dependency category: Local-substitutable (SQLite/Drizzle, all in-process side effects)
+  - Test impact: Individual service tests would be replaced by enrollment-flow boundary tests that verify
+  the complete outcome (enrollment + notification + XP)
+
+  ---
+  4. Monolithic Route Files — Extract instructor course management into a domain module
+
+  - Cluster: instructor.$courseId.tsx (1,886 LOC), courses.$slug.lessons.$lessonId.tsx (1,400+ LOC)
+  - Why they're coupled: These routes mix HTTP handling, form validation, business logic orchestration, and
+  React state management. The instructor route handles module CRUD, lesson CRUD, drag-and-drop reordering,
+  publishing — all inline. Understanding any single feature requires reading the entire file.
+  - Dependency category: In-process (pure orchestration logic that could be extracted)
+  - Test impact: Currently untestable without full route integration tests; extracting would enable direct
+  unit testing of course management logic
+
+  ---
+  5. Analytics Aggregation — Deepen the analytics service to hide query complexity
+
+  - Cluster: analyticsService.ts (426 LOC), plus schema dependencies on purchases, enrollments,
+  courseRatings, courses
+  - Why they're coupled: The single largest service file mixes instructor-specific and admin-specific
+  analytics, temporal date logic with known edge cases (setMonth() bug), and raw aggregation queries.
+  Callers must understand the TimePeriod type and multiple return shapes.
+  - Dependency category: Local-substitutable (SQLite/Drizzle)
+  - Test impact: Would enable comprehensive boundary tests for analytics calculations, replacing fragile
+  date-logic testing
+
+  ---
+  Which of these would you like to explore?
+
+✻ Brewed for 2m 19s                   
+
+❯ Which of these would you recommend?                                                                       
+                                       
+● I'd recommend #1 — Quiz Subsystem. Here's why:                                                            
+                                                                                                          
+  - Most concrete friction: It's the only place in the codebase mixing raw better-sqlite3 SQL with Drizzle  
+  ORM — two abstraction levels for the same data. That's a real bug vector (schema changes silently break   
+  raw queries, no type safety on those paths).                                                              
+  - Tightest natural boundary: Quiz CRUD, scoring, attempt recording, and XP awarding are a single domain   
+  concept split across 3 services. The interface can be small (take a quiz, score it, get stats) while      
+  hiding significant complexity (question types, scoring algorithms, XP dedup, attempt history).
+  - Best risk/reward ratio: It's scoped enough to be a single PR, but the payoff is high — you eliminate the
+   raw SQL risk, consolidate scattered quiz logic, and get a testable boundary that replaces multiple       
+  fragile test files.
+  - You're already looking at it — quizScoringService.ts is open in your editor.                            
+                                                                                                            
+  Candidates #2 and #4 are larger refactors with more blast radius. #3 and #5 are worthwhile but lower      
+  urgency.                                                                                                  
+                                                                                                            
+  Want to explore #1?                                                                                       
+   
+❯ Yes                                                                                                       
+                                                                            
+● Let me read the current quiz files to understand the exact interfaces before designing alternatives.      
+                                                                                                            
+● Read 3 files (ctrl+o to expand)                                                                           
+                                                                                                            
+● Now let me find how callers use these services.                                                           
+                                                                                                            
+● Searched for 4 patterns, read 1 file (ctrl+o to expand)                  
+                                                                                                            
+● Good. Now I have the full picture. Let me spawn 3 parallel design agents.                                 
+                                                                                                            
+● 3 agents finished (ctrl+o to expand)                                                                      
+   ├─ Design 1: Minimal interface · 13 tool uses · 35.8k tokens                                             
+   │  ⎿  Done                                                                                               
+   ├─ Design 2: Flexible interface · 11 tool uses · 40.0k tokens                                            
+   │  ⎿  Done                                                                                               
+   └─ Design 3: Caller-optimized · 0 tool uses                                                              
+      ⎿  Done                                                                                               
+                                                                           
+● Three Interface Designs                                                                                   
+                                                                                                            
+  ---                                                                                                       
+  Design A: Minimal (1-3 entry points)                                                                      
+                                                                                                            
+  // 3 entry points: read, submit, save                                                                     
+  getQuizForLesson(lessonId, userId) → { quiz, bestAttempt, latestAttempt }                                 
+  submitQuiz(userId, quizId, answers)  → SubmitResult (includes xpAwarded flag)                             
+  saveQuiz(input, lessonId)            → void (delete+recreate for instructor)                              
+                                                                                                            
+  - Lesson route goes from 5 imports across 3 files → 1 import, 2 calls                                     
+  - Instructor CRUD wizard keeps importing granular functions from existing quizService.ts                  
+  - getQuizStats/getUserQuizHistory left out — would need a separate analytics module                       
+  - Simplest possible interface, but instructor authoring lives outside the boundary                        
+                                                                                                            
+  ---                                                                                                       
+  Design B: Flexible (factory + scoring strategy)                                                           
+                                                                                                            
+  const quiz = createQuizModule({ db?, scoringStrategy?, quizPassXp? });
+                                                                                                            
+  quiz.getQuizForLesson(lessonId)         → QuizDetail | null                                               
+  quiz.getBestAttempt(userId, quizId)     → AttemptRecord | null                                            
+  quiz.getLatestAttempt(userId, quizId)   → AttemptRecord | null                                            
+  quiz.getAttemptHistory(userId, quizId)  → AttemptSummary[]                                                
+  quiz.getStats(quizId)                   → QuizStats                                                       
+  quiz.submitAttempt({ userId, quizId, answers }) → AttemptResult                                           
+  quiz.saveQuiz({ lessonId, title, ... }) → QuizDetail                                                      
+  quiz.deleteQuiz(quizId)                 → void                                                            
+                                                                                                            
+  - Factory with DB injection — tests pass :memory: DB, no mocking needed                                   
+  - ScoringStrategy hook for future question types (partial credit, weighted, etc.)                         
+  - Configurable XP amount via quizPassXp option                                                            
+  - ~8 methods — more surface area but everything is in one place                                           
+  - Stats and history included (raw SQL rewritten to Drizzle internally)                                    
+                                                                                                            
+  ---                                                                                                       
+  Design C: Caller-optimized (namespaced sub-objects)                                                       
+                                                                                                            
+  const quiz = createQuizModule(db);
+                                                                                                            
+  // Student hot path (2 calls):                                                                            
+  quiz.loadForLesson(lessonId, userId)  → { quiz, bestAttempt, latestAttempt }                              
+  quiz.submit(quizId, { userId, answers }) → QuizResult (xpAwarded, isFirstPass, grade)                     
+                                                                                                            
+  // Instructor authoring:                                                                                  
+  quiz.quizzes.create / update / delete / getByLesson                                                       
+  quiz.questions.add / update / delete / reorder                                                            
+  quiz.options.add / update / delete
+                                                                                                            
+  // Instructor analytics:                                                                                  
+  quiz.getStudentSummary(lessonId, userId)                                                                  
+  quiz.getStats(quizId)                                                                                     
+  quiz.getUserHistory(userId)
+                                                                                                            
+  - Student path is 2 calls, zero business logic in the route                                               
+  - loadForLesson() strips isCorrect flags before returning (structural safety)                             
+  - Instructor CRUD namespaced under .quizzes / .questions / .options                                       
+  - Largest interface but covers every caller without any leftover imports                                  
+                                                                                                            
+  ---                                                                                                       
+  My Recommendation: Design B                                                                               
+                                                                                                            
+  Design B is the strongest choice for this codebase. Here's why:
+                                                                                                            
+  1. It hits the sweet spot. Design A is too minimal — it leaves instructor CRUD outside the boundary, which
+   means quizService.ts still exists as a shallow module alongside the deep one. Design C is too ambitious —
+   the namespaced sub-objects add complexity for the instructor route that currently works fine with flat   
+  function imports.
+  2. The factory pattern is the key insight. createQuizModule({ db }) structurally prevents the raw-SQL
+  drift that caused the better-sqlite3 problem. Tests inject an in-memory DB directly — no vi.mock("~/db")  
+  hacks needed. This is the single biggest testability improvement.
+  3. It absorbs stats and history. Designs A omits getQuizStats/getUserQuizHistory, leaving them orphaned.  
+  Design B rewrites them in Drizzle internally and exposes them cleanly, eliminating the raw SQL entirely.  
+  4. saveQuiz replaces the instructor CRUD orchestration. The instructor quiz route currently does
+  deleteQuiz → createQuiz → loop(createQuestion) → loop(createOption) — 4+ sequential calls with no         
+  transaction. saveQuiz wraps this in a single db.transaction(). The granular question/option CRUD from
+  quizService.ts can be deleted.                                                                            
+  5. The ScoringStrategy hook is zero-cost insurance. The default covers multiple_choice and true_false. If
+  question types never expand, it's just a default parameter that nobody overrides. If they do expand, the  
+  extension point is already there.
+                                                                                                            
+  I'd take Design B's factory + injection, but borrow one thing from Design A: the xpAwarded: boolean return
+   (simpler than xpAwarded: number | null). The XP amount (5) is an implementation detail the caller doesn't
+   need.                                                                                                    
+       
+  Want me to create the GitHub issue with this design?                                                      
+   
+✻ Cooked for 3m 32s                                                                                         
+                                                                           
+❯ Yes                                                                                                       
+                                                                                                            
+● Bash(gh issue create --title "Deepen Quiz Module: merge quizService, quizScoringService, and quiz-XP into 
+      one deep module" --body "$(cat <<'EOF'                                                                
+      ## Problem…)                                                                                          
+  ⎿  https://github.com/mattpocock/cohort-003-project/issues/64
+                                                                                                            
+● Created: https://github.com/mattpocock/cohort-003-project/issues/64
+
+✻ Sautéed for 51s                                                                                           
+   
+────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯      
+────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  26.0%

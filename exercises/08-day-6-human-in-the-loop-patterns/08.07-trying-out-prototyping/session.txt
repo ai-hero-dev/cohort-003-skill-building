@@ -1,0 +1,204 @@
+ ▐▛███▜▌   Claude Code v2.1.72
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/repos/ai/cohort-003-project
+
+❯ /do-work @plans/live-presence-indicator.md I want to build a prototype of the      
+research here. I want this on a throwaway route that is only visible to developers.  
+I want to create a local asset that the agent that ends up implementing this in the  
+real app can actually use.                                                           
+  ⎿  Read plans/live-presence-indicator.md (269 lines)
+
+● I'll start by exploring the codebase to understand the project structure, routing,
+  and authentication patterns.
+
+● Explore(Explore codebase structure)
+  ⎿  Done (39 tool uses · 52.9k tokens · 1m 10s)
+  (ctrl+o to expand)
+
+● Now I have a clear picture. Let me read the key files I need to modify.
+
+● Read 4 files (ctrl+o to expand)
+
+● Good. Now let me install ably and create the files.
+
+● Bash(pnpm add ably)
+  ⎿  Progress: resolved 0, reused 1, downloaded 0, added 0
+     Progress: resolved 41, reused 40, downloaded 1, added 0
+     Progress: resolved 720, reused 597, downloaded 2, added 0
+     … +10 lines (ctrl+o to expand)
+  ⎿  (timeout 1m)
+
+● Now let me create the three files: the API auth route, the dev prototype route, and
+   register them.
+
+● Write(app/routes/api.ably-auth.ts)
+  ⎿  Wrote 31 lines to app/routes/api.ably-auth.ts
+       1 import type { LoaderFunctionArgs } from "react-router";
+       2 import Ably from "ably";
+       3 import { getCurrentUserId } from "~/lib/session";
+       4 import { getUserById } from "~/services/userService";
+       5
+       6 export async function loader({ request }: LoaderFunctionArgs) {
+       7   const userId = await getCurrentUserId(request);
+       8   if (!userId) {
+       9     return Response.json({ error: "Unauthorized" }, { status: 401 });
+      10   }
+     … +21 lines (ctrl+o to expand)
+
+● Write(app/routes/dev.presence.tsx)
+  ⎿  Wrote 290 lines to app/routes/dev.presence.tsx
+       1 import { useEffect, useMemo, useState } from "react";
+       2 import * as Ably from "ably";
+       3 import {
+       4   AblyProvider,
+       5   ChannelProvider,
+       6   usePresence,
+       7   usePresenceListener,
+       8 } from "ably/react";
+       9 import type { Route } from "./+types/dev.presence";
+      10 import { getCurrentUserId } from "~/lib/session";
+     … +280 lines (ctrl+o to expand)
+
+● Now register the routes.
+
+● Update(app/routes.ts)
+  ⎿  Added 2 lines
+      61      "api/notifications/mark-all-read",
+      62      "routes/api.notifications.mark-all-read.ts"
+      63    ),
+      64 +  route("api/ably-auth", "routes/api.ably-auth.ts"),                
+      65 +  route("dev/presence", "routes/dev.presence.tsx"),                 
+      66  ] satisfies RouteConfig;
+
+● Now let me validate with typecheck.
+
+● Bash(pnpm run typecheck 2>&1)
+  ⎿  > cadence-course-platform@ typecheck /home/mattpocock/repos/ai/cohort-003-p
+     roject
+     > react-router typegen && tsc
+  ⎿  (timeout 1m)
+
+● Typecheck passes. Let me run tests too.
+
+● Bash(pnpm run test 2>&1)
+  ⎿  > cadence-course-platform@ test /home/mattpocock/repos/ai/cohort-003-projec
+     t
+     > vitest run
+     … +19 lines (ctrl+o to expand)
+
+● All 396 tests pass. Now let me commit.
+
+● Bash(git diff --stat)
+  ⎿   app/routes.ts  |    2 +
+      package.json   |    1 +
+      pnpm-lock.yaml | 9059 +++++++++++++++++++++-------------------------------
+     … +2 lines (ctrl+o to expand)
+
+● Bash(git add app/routes/api.ably-auth.ts app/routes/dev.presence.tsx app/routes.ts
+      package.json pnpm-lock.yaml && git commit -m "$(cat <<'EOF'
+      Add live presence prot…)
+  ⎿  [STARTED] Backing up original state...
+     [COMPLETED] Backed up original state in git stash (98616bf)
+     [STARTED] Running tasks for staged files...
+     … +28 lines (ctrl+o to expand)
+
+● Committed. Here's what was built:
+
+  Files created
+
+  1. app/routes/api.ably-auth.ts — Token auth endpoint. Validates the user session,
+  creates a signed Ably token request using the server-side API key, returns it for
+  the client SDK to exchange.
+  2. app/routes/dev.presence.tsx — Dev-only prototype page at /dev/presence.
+  Contains:
+    - PresenceIndicator — Reusable, exported component that shows "Matt, Sarah, and 2
+   others are here" with a pulsing green dot. Designed to drop into any page wrapped
+  with AblyProvider + ChannelProvider.
+    - PresencePill — Display logic for the "X and Y are here" text formatting.
+    - createAblyClient — Exported factory function for creating the Ably Realtime
+  client with auth URL and disconnect timeout preconfigured.
+    - Demo UI — Channel switcher (3 demo channels), connection status indicator, raw
+  presence debug view. Blocked on missing auth or missing ABLY_API_KEY with helpful
+  error messages.
+    - Production guard — Returns 404 in production.
+  3. app/routes.ts — Added two route registrations for the auth endpoint and dev
+  page.
+
+  How to test it
+
+  1. Add ABLY_API_KEY=your-key to .env (free tier at ably.com)
+  2. Run pnpm dev
+  3. Go to /dev/presence
+  4. Open a second tab, use DevUI to switch to a different user, navigate to
+  /dev/presence
+  5. You should see real-time presence updates between tabs
+
+  Reusable assets for production
+
+  The implementing agent can import directly from this file:
+  import { PresenceIndicator, createAblyClient } from "~/routes/dev.presence";
+
+  Or copy PresenceIndicator, PresencePill, and createAblyClient into their own module
+   when integrating into the lesson page.
+
+✻ Worked for 2m 52s
+
+❯ Give me a detailed step-by-step guide on how to acquire an Abley API key with      
+exactly the scopes that you need.                                                    
+
+● Getting an Ably API key for presence
+
+  1. Create an account
+
+  - Go to ably.com and sign up (free tier is fine — 6M messages/month, 200 concurrent
+   connections)
+
+  2. Create an app
+
+  - After signing in, you'll land on the dashboard
+  - Click "Create New App"
+  - Name it something like cadence-dev
+  - Select the Free plan
+
+  3. Get the API key
+
+  - Once the app is created, you'll be taken to the app's page
+  - Go to the "API Keys" tab (left sidebar)
+  - There will be a default key already created (called something like "Root key")
+
+  4. Set the right capabilities
+
+  The default root key has all capabilities enabled. You only need two:
+
+  - Click the key to edit it (or create a new one with "Add new API key" for tighter
+  scoping)
+  - Under Capabilities, ensure only these are checked:
+    - subscribe — client receives presence events
+    - publish — not strictly needed for presence-only, but Ably bundles it
+    - presence — enter/leave the presence set
+    - presence-subscribe — receive others' presence events (this is the critical one
+  that's easy to miss, it's separate from subscribe)
+  - You can leave the resource/channel filter as * (all channels), or restrict to
+  lesson:* if you want to be precise
+
+  TL;DR the 4 capabilities needed: subscribe, publish, presence, presence-subscribe
+
+  If you just use the default root key, all of these are already enabled. Creating a
+  scoped key is optional but better practice.
+
+  5. Copy the key
+
+  - The key looks like: xVLyHw.xxxxxx:xxxxxxxxxxxx
+  - Copy it
+
+  6. Add to your .env
+
+  ABLY_API_KEY=xVLyHw.xxxxxx:xxxxxxxxxxxx
+
+  Then restart the dev server and hit /dev/presence.
+
+─────────────────────────────────────────────────────────────────────────────────────
+❯  
+─────────────────────────────────────────────────────────────────────────────────────
+  18.0%                                             ⧉ In live-presence-indicator.md
+  ⏵⏵ accept edits on (shift+tab to cycle)
