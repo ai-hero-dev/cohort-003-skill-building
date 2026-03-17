@@ -24,7 +24,7 @@ And so all the agent would see by default would be the name of the skill and the
 
 ![diagram-3.png](https://res.cloudinary.com/total-typescript/image/upload/v1773313272/ai-hero-images/etzgdziosi53zajtjn2w.png)
 
-And then if it chose to, inside the session, it could basically call the React Router skill and bam—all of the instructions would become available to it:
+And then if it chose to, inside the session, it could basically call the React Router skill and bam - all of the instructions would become available to it:
 
 ![diagram-4.png](https://res.cloudinary.com/total-typescript/image/upload/v1773313273/ai-hero-images/vupzrsa3oohlift9fdoc.png)
 
@@ -114,19 +114,31 @@ And I just pressed return here to invoke it.
 
 ## Agent-Invoked vs. User-Invoked
 
-Now the difference between a user invoked skill or an LLM invoked skill is basically what you do with this description:
+Now the difference between a user invoked skill or an LLM invoked skill is controlled by attributes in the front matter.
 
-![Showing the description of the skill](https://res.cloudinary.com/total-typescript/image/upload/v1773313283/ai-hero-images/orzf1fsurpppysvlpvu0.png)
+If you don't want Claude to be able to run a skill, you can specify `disable-model-invocation: true` in the front matter:
 
-Because this description is a description to the agent to use this skill under certain conditions.
+```yaml
+---
+name: pnpm-not-found
+description: Fix pnpm command not found errors by enabling corepack
+disable-model-invocation: true
+---
+```
 
-It turns out that if for whatever reason we didn't want to allow this skill to be used by the LLM, we can actually just omit the name and description here. This is kind of like in our diagram just deleting the metadata that gets included to the LLM:
+This means that the description won't be available to Claude Code. The skill will only appear in the user's list of invocable skills.
 
-![Showing a description deleted from the original diagram](https://res.cloudinary.com/total-typescript/image/upload/v1773313284/ai-hero-images/bqukqe8ax2igqc64xyxz.png)
+If you wanted to do the opposite and make it so only the model could invoke it, then you can set `user-invocable: false`:
 
-Now this React Router skill would only be invocable by the user. The LLM would have no reason to invoke it because it can't see a reason for doing so. There's no description of "use when."
+```yaml
+---
+name: better-sqlite-rebuild
+description: Use when seeing errors about better-sqlite3 native module
+user-invocable: false
+---
+```
 
-So I find user invoke skills a really cool mechanism for steering the LLM to my preferences without needing to add an extra instruction like a description to the context window.
+This means that it won't appear on the list of commands and only the LLM will be able to invoke it. Which actually kind of makes sense for this because we never really want to call it from within a session.
 
 ## Summary
 

@@ -51,6 +51,17 @@ pnpm -v
 You should see a version number printed back.
 
 
+### Install Dependencies
+
+- [ ] Install the project dependencies
+
+```bash
+pnpm install
+```
+
+This downloads all the required packages from the NPM registry into your `node_modules` folder.
+
+
 ### Seed the Database
 
 - [ ] Start the development server
