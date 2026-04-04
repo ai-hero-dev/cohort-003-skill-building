@@ -76,7 +76,7 @@ Right-click on the image and select "Copy image" from the context menu.
 
 - [ ] Click in the Claude Code input field and paste the image
 
-Press `Ctrl+V` (or `Cmd+V` on Mac) to paste.
+Press `Ctrl+V` (on Mac as well) to paste.
 
 - [ ] Type your prompt below or above the image
 
